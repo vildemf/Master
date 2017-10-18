@@ -7,11 +7,16 @@
 using namespace std;
 using namespace Eigen;
 
+void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh);
+void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
+          double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t);
+
 int main()
 {
     // INITIALIZATIONS
     int nx = 2;
     int nh = 4;
+    int n_par = nx + nh + nx*nh;
     int n_cycles = 7000;  // 1000
     int n_samples = 1000;  // 100
     double sigma = 1.0; // Normal distribution visibles
@@ -21,15 +26,10 @@ int main()
     double der1lnPsi;
     double der2lnPsi;
     // ASGD parameters
-    double a = 50.0;
     double A = 20.0;
     double t_prev = A;
     double t = A;
-    double f_min = -0.5;
-    double f_max = 2.0;
-    double asgd_omega = 1.0;
     double asgd_X_prev;
-    double f;
 
 
 
@@ -46,38 +46,18 @@ int main()
     c.resize(nh);
     w.resize(nx, nh);
     // Wf derived wrt rbm parameters, to be added up for each sampling
-    VectorXd derPsi_b;
-    VectorXd derPsi_c;
-    MatrixXd derPsi_w;
-    VectorXd derPsi_b_temp;
-    VectorXd derPsi_c_temp;
-    MatrixXd derPsi_w_temp;
-    derPsi_b.resize(nx);
-    derPsi_c.resize(nh);
-    derPsi_w.resize(nx, nh);
-    derPsi_b_temp.resize(nx);
-    derPsi_c_temp.resize(nh);
-    derPsi_w_temp.resize(nx, nh);
+    VectorXd derPsi;
+    VectorXd derPsi_temp;
+    derPsi.resize(n_par);
+    derPsi_temp.resize(n_par);
     // Local energy times wf derived wrt rbm parameters, to be added up for each sampling
-    VectorXd EderPsi_b;
-    VectorXd EderPsi_c;
-    MatrixXd EderPsi_w;
-    EderPsi_b.resize(nx);
-    EderPsi_c.resize(nh);
-    EderPsi_w.resize(nx, nh);
+    VectorXd EderPsi;
+    EderPsi.resize(n_par);
     // Gradient, to be computed at each cycle, after all sampling iterations completed
-    VectorXd grad_b;
-    VectorXd grad_c;
-    MatrixXd grad_w;
-    VectorXd grad_b_prev;
-    VectorXd grad_c_prev;
-    MatrixXd grad_w_prev;
-    grad_b.resize(nx);
-    grad_c.resize(nh);
-    grad_w.resize(nx, nh);
-    grad_b_prev.resize(nx);
-    grad_c_prev.resize(nh);
-    grad_w_prev.resize(nx, nh);
+    VectorXd grad;
+    VectorXd grad_prev;
+    grad.resize(n_par);
+    grad_prev.resize(n_par);
     // Other
     VectorXd probHgivenX;
     VectorXd Q;
@@ -117,12 +97,8 @@ int main()
         double Eloc = 0;
         double Eloc_temp = 0;
         double Eloc2 = 0;
-        derPsi_b.setZero();
-        derPsi_c.setZero();
-        derPsi_w.setZero();
-        EderPsi_b.setZero();
-        EderPsi_c.setZero();
-        EderPsi_w.setZero();
+        derPsi.setZero();
+        EderPsi.setZero();
 
         // Sampling loop
         for (int samples=0; samples<n_samples; samples++) {
@@ -160,24 +136,22 @@ int main()
                 Eloc += Eloc_temp;
 
                 // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
-                for (int i=0; i<nx; i++) {
-                    derPsi_b_temp(i) = 0.5*(x(i) - b(i));
+                for (int k=0; k<nx; k++) {
+                    derPsi_temp(k) = 0.5*(x(k) - b(k));
                 }
-                for (int j=0; j<nh; j++) {
-                    derPsi_c_temp(j) = -1.0/(1.0+exp(-Q(j)));
+                for (int k=nx; k<(nx+nh); k++) {
+                    derPsi_temp(k) = -1.0/(1.0+exp(-Q(k-nx)));
                 }
+                int k=nx + nh;
                 for (int i=0; i<nx; i++) {
                     for (int j=0; j<nh; j++) {
-                        derPsi_w_temp(i, j) = x(i)/(1.0+exp(Q(j)));
+                        derPsi_temp(k) = x(i)/(1.0+exp(Q(j)));
+                        k++;
                     }
                 }
                 // Add up values for expectation values
-                derPsi_b += derPsi_b_temp;
-                derPsi_c += derPsi_c_temp;
-                derPsi_w += derPsi_w_temp;
-                EderPsi_b += Eloc_temp*derPsi_b_temp;
-                EderPsi_c += Eloc_temp*derPsi_c_temp;
-                EderPsi_w += Eloc_temp*derPsi_w_temp;
+                derPsi += derPsi_temp;
+                EderPsi += Eloc_temp*derPsi_temp;
                 Eloc2 += Eloc_temp*Eloc_temp;
             }
         }
@@ -185,71 +159,120 @@ int main()
         double n_samp = n_samples - 0.1*n_samples;
         Eloc = Eloc/n_samp;
         Eloc2 = Eloc2/n_samp;
-        derPsi_b = derPsi_b/n_samp;
-        derPsi_c = derPsi_c/n_samp;
-        derPsi_w = derPsi_w/n_samp;
-        EderPsi_b = EderPsi_b/n_samp;
-        EderPsi_c = EderPsi_c/n_samp;
-        EderPsi_w = EderPsi_w/n_samp;
+        derPsi = derPsi/n_samp;
+        EderPsi = EderPsi/n_samp;
 
         double variance = Eloc2 - Eloc*Eloc;
 
         // Compute gradient
-        grad_b = 2*(EderPsi_b - Eloc*derPsi_b);
-        grad_c = 2*(EderPsi_c - Eloc*derPsi_c);
-        grad_w = 2*(EderPsi_w - Eloc*derPsi_w);
+        grad = 2*(EderPsi - Eloc*derPsi);
 
 
         // ASGD parameters
-        f = f_min + (f_max - f_min)/(1 - (f_max/f_min)*exp(-asgd_X_prev/asgd_omega));
-        t = 0;
-        if (t < (t_prev + f)) t=t_prev+f;
-        if (cycles==0 || cycles==1) t=20.0;
-        double gamma = a/(t+A);
+        //f = f_min + (f_max - f_min)/(1 - (f_max/f_min)*exp(-asgd_X_prev/asgd_omega));
+        //t = 0;
+        //if (t < (t_prev + f)) t=t_prev+f;
+        //if (cycles==0 || cycles==1) t=20.0;
+        //double gamma = a/(t+A);
         //cout << asgd_X_prev << endl;
 
         // Compute new parameters
-        for (int i=0; i<nx; i++) {
+        //for (int i=0; i<nx; i++) {
             // SGD
             //b(i) = b(i) - eta*grad_b(i);
             // ASGD
-            b(i) = b(i) - gamma*grad_b(i);
-        }
-        for (int j=0; j<nh; j++) {
+        //    b(i) = b(i) - gamma*grad(i);
+        //}
+        //for (int j=0; j<nh; j++) {
             // SGD
-            //c(j) = c(j) - eta*grad_c(j);
+            //c(j) = c(j) - eta*grad(nx + j);
             // ASGD
-            c(j) = c(j) - gamma*grad_c(j);
-        }
-        for (int i=0; i<nx; i++) {
-            for (int j=0; j<nh; j++) {
+        //    c(j) = c(j) - gamma*grad(nx + j);
+        //}
+        //int k = nx + nh;
+        //for (int i=0; i<nx; i++) {
+        //    for (int j=0; j<nh; j++) {
                 // SGD
-                //w(i,j) = w(i,j) - eta*grad_w(i,j);
+                //w(i,j) = w(i,j) - eta*grad(k);
                 // ASGD
-                w(i,j) = w(i,j) - gamma*grad_w(i,j);
-            }
-        }
+       //         w(i,j) = w(i,j) - gamma*grad(k);
+       //         k++;
+       //     }
+        //}
 
-        double gradnorm = sqrt(grad_b.squaredNorm() + grad_c.squaredNorm() + grad_w.squaredNorm());
-        cout << cycles << "   " << Eloc << "   " << variance << "   " << b(0) << " " << b(1) << " " << c(0) << " " << c(1) << " " << c(2) << " " << c(3) << " " << w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " " << w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) << endl;
+        //SGD(b, c, w, grad, eta, nx, nh);
+        ASGD(b, c, w, grad, cycles, nx, nh, asgd_X_prev, grad_prev, t_prev, t);
 
-        // Prepare values needed for next round of ASGD
-        double sum3 = 0;
-        for (int i=0; i<nx; i++) {
-            for (int j=0; j<nh; j++) {
-                sum3 += grad_w(i,j)*grad_w_prev(i,j);
-            }
-        }
+        //double gradnorm = sqrt(grad_b.squaredNorm() + grad_c.squaredNorm() + grad_w.squaredNorm());
+        double gradnorm = sqrt(grad.squaredNorm());
+        cout << cycles << "   " << Eloc << "   " << variance << "   " << b(0) << " "
+             << b(1) << " " << c(0) << " " << c(1) << " " << c(2) << " " << c(3) << " "
+             << w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " "
+             << w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) << endl;
 
-        asgd_X_prev = -grad_b.dot(grad_b_prev) - grad_c.dot(grad_c_prev) - sum3;
-        grad_b_prev = grad_b;
-        grad_c_prev = grad_c;
-        grad_w_prev = grad_w;
-        t_prev = t;
+
+        //asgd_X_prev = -grad.dot(grad_prev);
+        //grad_prev = grad;
+        //t_prev = t;
 
 
     }
     //cout << probHgivenV << endl;
+
+
+}
+
+void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh) {
+    // Compute new parameters
+    for (int i=0; i<nx; i++) {
+        b(i) = b(i) - eta*grad(i);
+    }
+    for (int j=0; j<nh; j++) {
+        c(j) = c(j) - eta*grad(nx + j);
+    }
+    int k = nx + nh;
+    for (int i=0; i<nx; i++) {
+        for (int j=0; j<nh; j++) {
+            w(i,j) = w(i,j) - eta*grad(k);
+            k++;
+        }
+    }
+
+}
+
+void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
+          double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t) {
+    // ASGD parameters
+    double a = 50.0;
+    double A = 20.0;
+    double f_min = -0.5;
+    double f_max = 2.0;
+    double asgd_omega = 1.0;
+
+    double f = f_min + (f_max - f_min)/(1 - (f_max/f_min)*exp(-asgd_X_prev/asgd_omega));
+    t = 0;
+    if (t < (t_prev + f)) t=t_prev+f;
+    if (cycles==0 || cycles==1) t=A;
+    double gamma = a/(t+A);
+
+    // Compute new parameters
+    for (int i=0; i<nx; i++) {
+        b(i) = b(i) - gamma*grad(i);
+    }
+    for (int j=0; j<nh; j++) {
+        c(j) = c(j) - gamma*grad(nx + j);
+    }
+    int k = nx + nh;
+    for (int i=0; i<nx; i++) {
+        for (int j=0; j<nh; j++) {
+            w(i,j) = w(i,j) - gamma*grad(k);
+            k++;
+        }
+    }
+
+    asgd_X_prev = -grad.dot(grad_prev);
+    grad_prev = grad;
+    t_prev = t;
 
 
 }
