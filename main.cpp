@@ -167,43 +167,9 @@ int main()
         // Compute gradient
         grad = 2*(EderPsi - Eloc*derPsi);
 
-
-        // ASGD parameters
-        //f = f_min + (f_max - f_min)/(1 - (f_max/f_min)*exp(-asgd_X_prev/asgd_omega));
-        //t = 0;
-        //if (t < (t_prev + f)) t=t_prev+f;
-        //if (cycles==0 || cycles==1) t=20.0;
-        //double gamma = a/(t+A);
-        //cout << asgd_X_prev << endl;
-
-        // Compute new parameters
-        //for (int i=0; i<nx; i++) {
-            // SGD
-            //b(i) = b(i) - eta*grad_b(i);
-            // ASGD
-        //    b(i) = b(i) - gamma*grad(i);
-        //}
-        //for (int j=0; j<nh; j++) {
-            // SGD
-            //c(j) = c(j) - eta*grad(nx + j);
-            // ASGD
-        //    c(j) = c(j) - gamma*grad(nx + j);
-        //}
-        //int k = nx + nh;
-        //for (int i=0; i<nx; i++) {
-        //    for (int j=0; j<nh; j++) {
-                // SGD
-                //w(i,j) = w(i,j) - eta*grad(k);
-                // ASGD
-       //         w(i,j) = w(i,j) - gamma*grad(k);
-       //         k++;
-       //     }
-        //}
-
         //SGD(b, c, w, grad, eta, nx, nh);
         ASGD(b, c, w, grad, cycles, nx, nh, asgd_X_prev, grad_prev, t_prev, t);
 
-        //double gradnorm = sqrt(grad_b.squaredNorm() + grad_c.squaredNorm() + grad_w.squaredNorm());
         double gradnorm = sqrt(grad.squaredNorm());
         cout << cycles << "   " << Eloc << "   " << variance << "   " << b(0) << " "
              << b(1) << " " << c(0) << " " << c(1) << " " << c(2) << " " << c(3) << " "
@@ -211,14 +177,7 @@ int main()
              << w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) << endl;
 
 
-        //asgd_X_prev = -grad.dot(grad_prev);
-        //grad_prev = grad;
-        //t_prev = t;
-
-
     }
-    //cout << probHgivenV << endl;
-
 
 }
 
