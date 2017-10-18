@@ -14,14 +14,14 @@ void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int 
 int main()
 {
     // INITIALIZATIONS
-    int nx = 2;
-    int nh = 4;
+    int nx = 4;
+    int nh = 6;
     int n_par = nx + nh + nx*nh;
-    int n_cycles = 7000;  // 1000
+    int n_cycles = 15000;  // 1000
     int n_samples = 1000;  // 100
     double sigma = 1.0; // Normal distribution visibles
     double omega = 1.0;
-    double eta = 4.0; // Learning rate
+    double eta = 0.004; // SGD learning rate
     double x_mean;  // Normal distribution visibles
     double der1lnPsi;
     double der2lnPsi;
@@ -103,18 +103,23 @@ int main()
         // Sampling loop
         for (int samples=0; samples<n_samples; samples++) {
             // Compute prob of hidden given visible and set hidden values accordingly
+            random_device rd_h;
+            default_random_engine generator_h(rd_h());
             std::uniform_real_distribution<double> distribution_setH(0,1);
             for (int j=0; j<nh; j++) {
                 probHgivenX(j) = 1.0/(1 + exp(c(j) + x.transpose()*w.col(j)));
-                h(j) = distribution_setH(rgen_Gibbs) < probHgivenX(j);
+                h(j) = distribution_setH(generator_h) < probHgivenX(j);
             }
             // Set new positions (visibles) given hidden, according to normal distribution
-            default_random_engine generator_x;
+            random_device rd_x;
+            default_random_engine generator_x(rd_x());
             for (int i=0; i<nx; i++) {
                 x_mean = b(i) + w.row(i)*h;
+                //cout << b(i) << "  " << x_mean << endl;
                 normal_distribution<double> distribution_x(x_mean, sigma);
                 //cout << cycles << "   " << samples << "   " << i << "   " << x_mean << endl;
                 x(i) = distribution_x(generator_x);
+                //cout << cycles << "  " << samples << "  " << x(i) << "  " << x_mean << endl;
             }
             if (samples > 0.1*n_samples) {
                 // Compute the local energy
@@ -128,8 +133,8 @@ int main()
                         sum1 += w(r,j)/(1.0+exp(-Q(j)));
                         sum2 += w(r,j)*w(r,j)*exp(Q(j))/((exp(Q(j))+1.0)*(exp(Q(j))+1.0));
                     }
-                    der1lnPsi = -0.5*(x(r) - b(r)) - sum1;
-                    der2lnPsi = -0.5 + sum2;
+                    der1lnPsi = -(x(r) - b(r)) - sum1;
+                    der2lnPsi = -1.0 + sum2;
                     Eloc_temp += -der1lnPsi*der1lnPsi - der2lnPsi + omega*omega*x(r)*x(r);
                 }
                 Eloc_temp = 0.5*Eloc_temp;
@@ -137,7 +142,7 @@ int main()
 
                 // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
                 for (int k=0; k<nx; k++) {
-                    derPsi_temp(k) = 0.5*(x(k) - b(k));
+                    derPsi_temp(k) = (x(k) - b(k));
                 }
                 for (int k=nx; k<(nx+nh); k++) {
                     derPsi_temp(k) = -1.0/(1.0+exp(-Q(k-nx)));
@@ -172,14 +177,27 @@ int main()
 
         double gradnorm = sqrt(grad.squaredNorm());
         cout << cycles << "   " << Eloc << "   " << variance << "   " << b(0) << " "
-             << b(1) << " " << c(0) << " " << c(1) << " " << c(2) << " " << c(3) << " "
+             << b(1) << " "
+             << c(0) << " " << c(1) << " " << c(2) << " " << c(3) << " "
              << w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " "
-             << w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) << endl;
+             << w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) <<
+                endl;
 
 
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
 
 void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh) {
     // Compute new parameters
@@ -202,7 +220,7 @@ void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int n
 void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
           double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t) {
     // ASGD parameters
-    double a = 50.0;
+    double a = 0.1;
     double A = 20.0;
     double f_min = -0.5;
     double f_max = 2.0;
