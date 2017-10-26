@@ -7,6 +7,7 @@
 using namespace std;
 using namespace Eigen;
 
+double interaction(VectorXd x, int nx);
 void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh);
 void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
           double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t);
@@ -15,13 +16,13 @@ int main()
 {
     // INITIALIZATIONS
     int nx = 4;
-    int nh = 6;
+    int nh = 2;
     int n_par = nx + nh + nx*nh;
     int n_cycles = 15000;  // 1000
     int n_samples = 1000;  // 100
     double sigma = 1.0; // Normal distribution visibles
     double omega = 1.0;
-    double eta = 0.004; // SGD learning rate
+    double eta = 0.01; // SGD learning rate
     double x_mean;  // Normal distribution visibles
     double der1lnPsi;
     double der2lnPsi;
@@ -109,6 +110,7 @@ int main()
             for (int j=0; j<nh; j++) {
                 probHgivenX(j) = 1.0/(1 + exp(c(j) + x.transpose()*w.col(j)));
                 h(j) = distribution_setH(generator_h) < probHgivenX(j);
+                //cout << h(j) << endl;
             }
             // Set new positions (visibles) given hidden, according to normal distribution
             random_device rd_x;
@@ -136,8 +138,15 @@ int main()
                     der1lnPsi = -(x(r) - b(r)) - sum1;
                     der2lnPsi = -1.0 + sum2;
                     Eloc_temp += -der1lnPsi*der1lnPsi - der2lnPsi + omega*omega*x(r)*x(r);
+
+
                 }
                 Eloc_temp = 0.5*Eloc_temp;
+
+                // With interaction:
+                Eloc_temp += interaction(x, nx);
+
+
                 Eloc += Eloc_temp;
 
                 // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
@@ -172,15 +181,17 @@ int main()
         // Compute gradient
         grad = 2*(EderPsi - Eloc*derPsi);
 
+
+        // Choose one of the methods:
         //SGD(b, c, w, grad, eta, nx, nh);
         ASGD(b, c, w, grad, cycles, nx, nh, asgd_X_prev, grad_prev, t_prev, t);
 
         double gradnorm = sqrt(grad.squaredNorm());
-        cout << cycles << "   " << Eloc << "   " << variance << "   " << b(0) << " "
-             << b(1) << " "
-             << c(0) << " " << c(1) << " " << c(2) << " " << c(3) << " "
-             << w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " "
-             << w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) <<
+        cout << cycles << "   " << Eloc << "   " << variance << "   " << b(0) << //" "
+             //<< b(1) << " "
+             //<< c(0) << " " << c(1) << " " << c(2) << " " << c(3) << " "
+             //<< w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " "
+             //<< w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) <<
                 endl;
 
 
@@ -193,7 +204,22 @@ int main()
 
 
 
+double interaction(VectorXd x, int nx) {
+    double interaction_term = 0;
+    double rx;
+    double ry;
+    double r_dist;
+    for (int r=0; r<nx-2; r+=2) {
+        for (int s=(r+2); s<nx; s+=2) {
+            rx = (x(r) - x(s));
+            ry = (x(r+1) - x(s+1));
+            r_dist = sqrt(rx*rx + ry*ry);
+            interaction_term += 1.0/r_dist;
+        }
 
+    }
+    return interaction_term;
+}
 
 
 
