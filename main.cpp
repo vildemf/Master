@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <Eigen/Dense>
 #include <random>
 #include <vector>
@@ -8,21 +9,22 @@ using namespace std;
 using namespace Eigen;
 
 double interaction(VectorXd x, int nx);
-void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh);
+void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh, ofstream &outfile);
 void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
-          double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t);
+          double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t, ofstream &outfile);
 
 int main()
 {
     // INITIALIZATIONS
-    int nx = 4;
-    int nh = 2;
+    // Comment/uncomment line 169 to include/exclude interaction
+    int nx = 4; // Number which represents particles*dimensions.
+    int nh = 2; // Number of hidden units.
     int n_par = nx + nh + nx*nh;
     int n_cycles = 15000;  // 1000
-    int n_samples = 1000;  // 100
+    int n_samples = 10000;  // 100
     double sigma = 1.0; // Normal distribution visibles
     double omega = 1.0;
-    double eta = 0.01; // SGD learning rate
+    double eta = 0.1; // SGD learning rate
     double x_mean;  // Normal distribution visibles
     double der1lnPsi;
     double der2lnPsi;
@@ -32,7 +34,10 @@ int main()
     double t = A;
     double asgd_X_prev;
 
-
+    ofstream outfile;
+    outfile.open("alphasNX" + to_string(nx) + "NH" + to_string(nh) + "CorrNO.txt");
+    ofstream outfile2;
+    outfile2.open("posAndHiddenNX" + to_string(nx) + "NH" + to_string(nh) + "CorrNO.txt");
 
     // DECLARATIONS
     // The Boltzmann machine / wave function
@@ -81,16 +86,25 @@ int main()
     std::normal_distribution<double> distribution_initRBM(0,sigma_initRBM);
     for (int i=0; i<nx; i++){
         b(i) = distribution_initRBM(generator_initRBM);
+        //outfile << b(i) << " ";
     }
     for (int i=0; i<nh; i++){
         c(i) = distribution_initRBM(generator_initRBM);
+        //outfile << c(i) << " ";
     }
     for (int i=0; i<nx; i++){
         for (int j=0; j<nh; j++){
             w(i,j) = distribution_initRBM(generator_initRBM);
+            //outfile << w(i,j) << " ";
         }
     }
+    //outfile << '\n';
 
+    random_device rd_h;
+    default_random_engine generator_h(rd_h());
+    std::uniform_real_distribution<double> distribution_setH(0,1);
+    random_device rd_x;
+    default_random_engine generator_x(rd_x());
     // START
     // Minimization loop
     for (int cycles=0; cycles<n_cycles; cycles++) {
@@ -101,20 +115,22 @@ int main()
         derPsi.setZero();
         EderPsi.setZero();
 
+
         // Sampling loop
         for (int samples=0; samples<n_samples; samples++) {
             // Compute prob of hidden given visible and set hidden values accordingly
-            random_device rd_h;
-            default_random_engine generator_h(rd_h());
-            std::uniform_real_distribution<double> distribution_setH(0,1);
+
+
             for (int j=0; j<nh; j++) {
                 probHgivenX(j) = 1.0/(1 + exp(c(j) + x.transpose()*w.col(j)));
                 h(j) = distribution_setH(generator_h) < probHgivenX(j);
+                //if (cycles==59 && samples > 0.1*n_samples) {
+                    //outfile2 << h(j) << " ";
+                //}
                 //cout << h(j) << endl;
             }
             // Set new positions (visibles) given hidden, according to normal distribution
-            random_device rd_x;
-            default_random_engine generator_x(rd_x());
+
             for (int i=0; i<nx; i++) {
                 x_mean = b(i) + w.row(i)*h;
                 //cout << b(i) << "  " << x_mean << endl;
@@ -122,7 +138,13 @@ int main()
                 //cout << cycles << "   " << samples << "   " << i << "   " << x_mean << endl;
                 x(i) = distribution_x(generator_x);
                 //cout << cycles << "  " << samples << "  " << x(i) << "  " << x_mean << endl;
+                //if (cycles==59 && samples > 0.1*n_samples) {
+                    //outfile2 << x(i) << " ";
+                //}
             }
+            //if (cycles==59 && samples > 0.1*n_samples) {
+            //    outfile2 << endl;
+            //}
             if (samples > 0.1*n_samples) {
                 // Compute the local energy
                 Q = -c - (x.transpose()*w).transpose();
@@ -181,10 +203,10 @@ int main()
         // Compute gradient
         grad = 2*(EderPsi - Eloc*derPsi);
 
-
+        outfile << Eloc << " ";
         // Choose one of the methods:
-        //SGD(b, c, w, grad, eta, nx, nh);
-        ASGD(b, c, w, grad, cycles, nx, nh, asgd_X_prev, grad_prev, t_prev, t);
+        //SGD(b, c, w, grad, eta, nx, nh, outfile);
+        ASGD(b, c, w, grad, cycles, nx, nh, asgd_X_prev, grad_prev, t_prev, t, outfile);
 
         double gradnorm = sqrt(grad.squaredNorm());
         cout << cycles << "   " << Eloc << "   " << variance << "   " << b(0) << //" "
@@ -225,26 +247,30 @@ double interaction(VectorXd x, int nx) {
 
 
 
-void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh) {
+void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh, ofstream &outfile) {
     // Compute new parameters
     for (int i=0; i<nx; i++) {
+        outfile << b(i) << " ";
         b(i) = b(i) - eta*grad(i);
     }
     for (int j=0; j<nh; j++) {
+        outfile << c(j) << " ";
         c(j) = c(j) - eta*grad(nx + j);
     }
     int k = nx + nh;
     for (int i=0; i<nx; i++) {
         for (int j=0; j<nh; j++) {
+            outfile << w(i,j) << " ";
             w(i,j) = w(i,j) - eta*grad(k);
             k++;
         }
     }
+    outfile << '\n';
 
 }
 
 void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
-          double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t) {
+          double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t, ofstream &outfile) {
     // ASGD parameters
     double a = 0.1;
     double A = 20.0;
@@ -258,25 +284,37 @@ void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int 
     if (cycles==0 || cycles==1) t=A;
     double gamma = a/(t+A);
 
+    //cout << f << " " << t << " " << asgd_X_prev << gamma << endl;
     // Compute new parameters
     for (int i=0; i<nx; i++) {
+        outfile << b(i) << " ";
         b(i) = b(i) - gamma*grad(i);
     }
     for (int j=0; j<nh; j++) {
+        outfile << c(j) << " ";
         c(j) = c(j) - gamma*grad(nx + j);
     }
     int k = nx + nh;
     for (int i=0; i<nx; i++) {
         for (int j=0; j<nh; j++) {
+            outfile << w(i,j) << " ";
             w(i,j) = w(i,j) - gamma*grad(k);
             k++;
         }
     }
-
+    outfile << '\n';
     asgd_X_prev = -grad.dot(grad_prev);
     grad_prev = grad;
     t_prev = t;
 
 
 }
+
+//void ASGD_test() {
+    // Flipped Gaussian distribution f(x|mu, sigma**2) = -1/sqrt(2*pi*sigma**2)*exp(-((x-mu)**2)/(2*sigma**2))
+    // Optimize with respect to x, which should go to zero.
+//    double mu = 0.0;
+//    double sigma = 1.0;
+
+//}
 
