@@ -122,7 +122,7 @@ int main()
 
 
             for (int j=0; j<nh; j++) {
-                probHgivenX(j) = 1.0/(1 + exp(c(j) + x.transpose()*w.col(j)));
+                probHgivenX(j) = 1.0/(1 + exp(-(c(j) + x.transpose()*w.col(j))));
                 h(j) = distribution_setH(generator_h) < probHgivenX(j);
                 //if (cycles==59 && samples > 0.1*n_samples) {
                     //outfile2 << h(j) << " ";
@@ -154,10 +154,10 @@ int main()
                     double sum1 = 0;
                     double sum2 = 0;
                     for (int j=0; j<nh; j++) {
-                        sum1 += w(r,j)/(1.0+exp(-Q(j)));
-                        sum2 += w(r,j)*w(r,j)*exp(Q(j))/((exp(Q(j))+1.0)*(exp(Q(j))+1.0));
+                        sum1 += w(r,j)/(1.0+exp(Q(j)));
+                        sum2 += w(r,j)*w(r,j)*exp(-Q(j))/((exp(-Q(j))+1.0)*(exp(-Q(j))+1.0));
                     }
-                    der1lnPsi = -(x(r) - b(r)) - sum1;
+                    der1lnPsi = -(x(r) - b(r)) + sum1;
                     der2lnPsi = -1.0 + sum2;
                     Eloc_temp += -der1lnPsi*der1lnPsi - der2lnPsi + omega*omega*x(r)*x(r);
 
@@ -176,7 +176,7 @@ int main()
                     derPsi_temp(k) = (x(k) - b(k));
                 }
                 for (int k=nx; k<(nx+nh); k++) {
-                    derPsi_temp(k) = -1.0/(1.0+exp(-Q(k-nx)));
+                    derPsi_temp(k) = 1.0/(1.0+exp(Q(k-nx)));
                 }
                 int k=nx + nh;
                 for (int i=0; i<nx; i++) {
