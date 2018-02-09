@@ -8,21 +8,23 @@
 using namespace std;
 using namespace Eigen;
 
-double interaction(VectorXd x, int nx);
-void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh, ofstream &outfile);
-void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
+double interaction(VectorXd x, int nx, int dim);
+void SGD(VectorXd &a, VectorXd &b, MatrixXd &w, VectorXd grad, double eta, int nx, int nh, ofstream &outfile);
+void ASGD(VectorXd &a, VectorXd &b, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
           double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t, ofstream &outfile);
 
 int main()
 {
     // INITIALIZATIONS
     // Comment/uncomment line 169 to include/exclude interaction
-    int nx = 4; // Number which represents particles*dimensions.
+    int nx = 6; // Number which represents particles*dimensions.
     int nh = 2; // Number of hidden units.
+    int dim = 3; // Number of spatial dimensions
     int n_par = nx + nh + nx*nh;
     int n_cycles = 15000;  // 1000
     int n_samples = 10000;  // 100
-    double sigma = 1.0; // Normal distribution visibles
+    double sig = 1.035; // Normal distribution visibles
+    double sig2 = sig*sig;
     double omega = 1.0;
     double eta = 0.1; // SGD learning rate
     double x_mean;  // Normal distribution visibles
@@ -35,7 +37,8 @@ int main()
     double asgd_X_prev;
 
     ofstream outfile;
-    outfile.open("alphasNX" + to_string(nx) + "NH" + to_string(nh) + "CorrNO.txt");
+    //outfile.open("Gibbs_alphasNX" + to_string(nx) + "NH" + to_string(nh) + ".txt");
+    outfile.open("gibbs.txt");
     ofstream outfile2;
     outfile2.open("posAndHiddenNX" + to_string(nx) + "NH" + to_string(nh) + "CorrNO.txt");
 
@@ -43,13 +46,13 @@ int main()
     // The Boltzmann machine / wave function
     VectorXd x;
     VectorXd h;
+    VectorXd a;
     VectorXd b;
-    VectorXd c;
     MatrixXd w;
     x.resize(nx);
     h.resize(nh);
-    b.resize(nx);
-    c.resize(nh);
+    a.resize(nx);
+    b.resize(nh);
     w.resize(nx, nh);
     // Wf derived wrt rbm parameters, to be added up for each sampling
     VectorXd derPsi;
@@ -72,7 +75,7 @@ int main()
 
     // ASSIGNMENTS
     // The visible units/ positions
-    std::uniform_real_distribution<double> distribution_initX(0,1);
+    std::uniform_real_distribution<double> distribution_initX(-0.5,0.5);
     mt19937 rgen_Gibbs;
     std::random_device rd_Gibbs;
     rgen_Gibbs.seed(rd_Gibbs());
@@ -81,16 +84,16 @@ int main()
     }
     // The rbm parameters
     int seed_initRBM=12345;
-    float sigma_initRBM = 0.01;
+    float sigma_initRBM = 0.001;
     std::default_random_engine generator_initRBM(seed_initRBM);
     std::normal_distribution<double> distribution_initRBM(0,sigma_initRBM);
     for (int i=0; i<nx; i++){
-        b(i) = distribution_initRBM(generator_initRBM);
-        //outfile << b(i) << " ";
+        a(i) = distribution_initRBM(generator_initRBM);
+        //outfile << a(i) << " ";
     }
     for (int i=0; i<nh; i++){
-        c(i) = distribution_initRBM(generator_initRBM);
-        //outfile << c(i) << " ";
+        b(i) = distribution_initRBM(generator_initRBM);
+        //outfile << b(i) << " ";
     }
     for (int i=0; i<nx; i++){
         for (int j=0; j<nh; j++){
@@ -122,7 +125,7 @@ int main()
 
 
             for (int j=0; j<nh; j++) {
-                probHgivenX(j) = 1.0/(1 + exp(-(c(j) + x.transpose()*w.col(j))));
+                probHgivenX(j) = 1.0/(1 + exp(-(b(j) + (((1.0/sig2)*x).transpose()*w.col(j)))));
                 h(j) = distribution_setH(generator_h) < probHgivenX(j);
                 //if (cycles==59 && samples > 0.1*n_samples) {
                     //outfile2 << h(j) << " ";
@@ -132,9 +135,9 @@ int main()
             // Set new positions (visibles) given hidden, according to normal distribution
 
             for (int i=0; i<nx; i++) {
-                x_mean = b(i) + w.row(i)*h;
-                //cout << b(i) << "  " << x_mean << endl;
-                normal_distribution<double> distribution_x(x_mean, sigma);
+                x_mean = a(i) + w.row(i)*h;
+                //cout << a(i) << "  " << x_mean << endl;
+                normal_distribution<double> distribution_x(x_mean, sig);
                 //cout << cycles << "   " << samples << "   " << i << "   " << x_mean << endl;
                 x(i) = distribution_x(generator_x);
                 //cout << cycles << "  " << samples << "  " << x(i) << "  " << x_mean << endl;
@@ -145,20 +148,25 @@ int main()
             //if (cycles==59 && samples > 0.1*n_samples) {
             //    outfile2 << endl;
             //}
+            //if (cycles>60 && samples>1000) {
+                //cout << Psi << "   " << Psi_trial << endl;
+              //  cout << x << endl;
+
+            //}
             if (samples > 0.1*n_samples) {
                 // Compute the local energy
-                Q = -c - (x.transpose()*w).transpose();
+                Q = b + (1.0/sig2)*(x.transpose()*w).transpose();
                 Eloc_temp = 0;
                 // Loop over the visibles (n_particles*n_coordinates) for the Laplacian
                 for (int r=0; r<nx; r++) {
                     double sum1 = 0;
                     double sum2 = 0;
                     for (int j=0; j<nh; j++) {
-                        sum1 += w(r,j)/(1.0+exp(Q(j)));
-                        sum2 += w(r,j)*w(r,j)*exp(-Q(j))/((exp(-Q(j))+1.0)*(exp(-Q(j))+1.0));
+                        sum1 += w(r,j)/(1.0+exp(-Q(j)));
+                        sum2 += w(r,j)*w(r,j)*exp(Q(j))/((exp(Q(j))+1.0)*(exp(Q(j))+1.0));
                     }
-                    der1lnPsi = -(x(r) - b(r)) + sum1;
-                    der2lnPsi = -1.0 + sum2;
+                    der1lnPsi = -(x(r) - a(r))/sig2 + sum1/sig2;
+                    der2lnPsi = -1.0/sig2 + sum2/(sig2*sig2);
                     Eloc_temp += -der1lnPsi*der1lnPsi - der2lnPsi + omega*omega*x(r)*x(r);
 
 
@@ -166,22 +174,22 @@ int main()
                 Eloc_temp = 0.5*Eloc_temp;
 
                 // With interaction:
-                Eloc_temp += interaction(x, nx);
+                Eloc_temp += interaction(x, nx, dim);
 
 
                 Eloc += Eloc_temp;
 
                 // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
                 for (int k=0; k<nx; k++) {
-                    derPsi_temp(k) = (x(k) - b(k));
+                    derPsi_temp(k) = (x(k) - a(k))/sig2;
                 }
                 for (int k=nx; k<(nx+nh); k++) {
-                    derPsi_temp(k) = 1.0/(1.0+exp(Q(k-nx)));
+                    derPsi_temp(k) = 1.0/(1.0+exp(-Q(k-nx)));
                 }
                 int k=nx + nh;
                 for (int i=0; i<nx; i++) {
                     for (int j=0; j<nh; j++) {
-                        derPsi_temp(k) = x(i)/(1.0+exp(Q(j)));
+                        derPsi_temp(k) = x(i)/(sig2*(1.0+exp(-Q(j))));
                         k++;
                     }
                 }
@@ -203,15 +211,15 @@ int main()
         // Compute gradient
         grad = 2*(EderPsi - Eloc*derPsi);
 
-        outfile << Eloc << " ";
+        outfile << Eloc << " " << variance << " ";
         // Choose one of the methods:
-        //SGD(b, c, w, grad, eta, nx, nh, outfile);
-        ASGD(b, c, w, grad, cycles, nx, nh, asgd_X_prev, grad_prev, t_prev, t, outfile);
+        //SGD(a, b, w, grad, eta, nx, nh, outfile);
+        ASGD(a, b, w, grad, cycles, nx, nh, asgd_X_prev, grad_prev, t_prev, t, outfile);
 
         double gradnorm = sqrt(grad.squaredNorm());
-        cout << cycles << "   " << Eloc << "   " << variance << "   " << b(0) << //" "
-             //<< b(1) << " "
-             //<< c(0) << " " << c(1) << " " << c(2) << " " << c(3) << " "
+        cout << cycles << "   " << Eloc << "   " << variance << "   " << a(0) << //" "
+            // << a(1) << " "
+             //<< b(0) << " " << b(1) << " " << b(2) << " " << b(3) << " "
              //<< w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " "
              //<< w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) <<
                 endl;
@@ -226,19 +234,20 @@ int main()
 
 
 
-double interaction(VectorXd x, int nx) {
+double interaction(VectorXd x, int nx, int dim) {
     double interaction_term = 0;
-    double rx;
-    double ry;
+    double r_i;
     double r_dist;
-    for (int r=0; r<nx-2; r+=2) {
-        for (int s=(r+2); s<nx; s+=2) {
-            rx = (x(r) - x(s));
-            ry = (x(r+1) - x(s+1));
-            r_dist = sqrt(rx*rx + ry*ry);
-            interaction_term += 1.0/r_dist;
+    double r_dist_i;
+    for (int r=0; r<nx-dim; r+=dim) {
+        for (int s=(r+dim); s<nx; s+=dim) {
+            r_dist = 0;
+            for (int i=0; i<dim; i++) {
+                r_dist_i = x(r+i) - x(s+i);
+                r_dist += r_dist_i*r_dist_i;
+            }
+            interaction_term += 1.0/sqrt(r_dist);
         }
-
     }
     return interaction_term;
 }
@@ -247,15 +256,15 @@ double interaction(VectorXd x, int nx) {
 
 
 
-void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int nx, int nh, ofstream &outfile) {
+void SGD(VectorXd &a, VectorXd &b, MatrixXd &w, VectorXd grad, double eta, int nx, int nh, ofstream &outfile) {
     // Compute new parameters
     for (int i=0; i<nx; i++) {
-        outfile << b(i) << " ";
-        b(i) = b(i) - eta*grad(i);
+        outfile << a(i) << " ";
+        a(i) = a(i) - eta*grad(i);
     }
     for (int j=0; j<nh; j++) {
-        outfile << c(j) << " ";
-        c(j) = c(j) - eta*grad(nx + j);
+        outfile << b(j) << " ";
+        b(j) = b(j) - eta*grad(nx + j);
     }
     int k = nx + nh;
     for (int i=0; i<nx; i++) {
@@ -269,10 +278,10 @@ void SGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, double eta, int n
 
 }
 
-void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
+void ASGD(VectorXd &a, VectorXd &b, MatrixXd &w, VectorXd grad, int cycles, int nx, int nh,
           double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t, ofstream &outfile) {
     // ASGD parameters
-    double a = 0.1;
+    double a_asgd = 0.01;
     double A = 20.0;
     double f_min = -0.5;
     double f_max = 2.0;
@@ -282,17 +291,17 @@ void ASGD(VectorXd &b, VectorXd &c, MatrixXd &w, VectorXd grad, int cycles, int 
     t = 0;
     if (t < (t_prev + f)) t=t_prev+f;
     if (cycles==0 || cycles==1) t=A;
-    double gamma = a/(t+A);
+    double gamma = a_asgd/(t+A);
 
     //cout << f << " " << t << " " << asgd_X_prev << gamma << endl;
     // Compute new parameters
     for (int i=0; i<nx; i++) {
-        outfile << b(i) << " ";
-        b(i) = b(i) - gamma*grad(i);
+        outfile << a(i) << " ";
+        a(i) = a(i) - gamma*grad(i);
     }
     for (int j=0; j<nh; j++) {
-        outfile << c(j) << " ";
-        c(j) = c(j) - gamma*grad(nx + j);
+        outfile << b(j) << " ";
+        b(j) = b(j) - gamma*grad(nx + j);
     }
     int k = nx + nh;
     for (int i=0; i<nx; i++) {
