@@ -1,9 +1,10 @@
 #include "neuralquantumstate.h"
 #include <random>
 
-NeuralQuantumState::NeuralQuantumState(int nh, int nx, double sigma) {
+NeuralQuantumState::NeuralQuantumState(int nh, int nx, int dim, double sigma) {
     m_nx = nx;
     m_nh = nh;
+    m_dim  = dim;
     m_sig = sigma;
     m_sig2 = sigma*sigma;
     m_x.resize(m_nx); // positions/visibles
@@ -16,8 +17,6 @@ NeuralQuantumState::NeuralQuantumState(int nh, int nx, double sigma) {
 }
 
 void NeuralQuantumState::setupWeights() {
-
-    // The rbm parameters
     int seed_initRBM=12345;
     float sigma_initRBM = 0.001;
     std::default_random_engine generator_initRBM(seed_initRBM);

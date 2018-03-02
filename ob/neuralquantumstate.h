@@ -5,8 +5,17 @@
 
 class NeuralQuantumState {
 private:
+    double m_psiFactor1;
+    double m_psiFactor2;
+    Eigen::VectorXd m_Q;
+
+    void setupWeights();
+    void setupPositions();
+
+public:
     int m_nx;
     int m_nh;
+    int m_dim;
     double m_sig;
     double m_sig2;
     Eigen::VectorXd m_x;
@@ -15,16 +24,8 @@ private:
     Eigen::VectorXd m_b;
     Eigen::MatrixXd m_w;
 
-    double m_psiFactor1;
-    double m_psiFactor2;
-    Eigen::VectorXd m_Q;
-
-    void setupWeights();
-    void setupPositions();
+    NeuralQuantumState(int nh, int nx, int dim, double sigma);
     double computePsi();
-
-public:
-    NeuralQuantumState(int nh, int nx, double sigma);
 };
 
 #endif // NEURALQUANTUMSTATE_H
