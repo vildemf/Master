@@ -32,6 +32,10 @@ int main() {
     double der1lnPsi;
     double der2lnPsi;
 
+    random_device seedGenerator;
+
+
+
 
 
 

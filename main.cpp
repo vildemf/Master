@@ -17,13 +17,13 @@ int main()
 {
     // INITIALIZATIONS
     // Comment/uncomment line 169 to include/exclude interaction
-    int nx = 6; // Number which represents particles*dimensions.
+    int nx = 4; // Number which represents particles*dimensions.
     int nh = 2; // Number of hidden units.
-    int dim = 3; // Number of spatial dimensions
+    int dim = 2; // Number of spatial dimensions
     int n_par = nx + nh + nx*nh;
     int n_cycles = 15000;  // 1000
     int n_samples = 10000;  // 100
-    double sig = 1.035; // Normal distribution visibles
+    double sig = 1.00; // Normal distribution visibles
     double sig2 = sig*sig;
     double omega = 1.0;
     double eta = 0.1; // SGD learning rate
@@ -174,7 +174,7 @@ int main()
                 Eloc_temp = 0.5*Eloc_temp;
 
                 // With interaction:
-                Eloc_temp += interaction(x, nx, dim);
+                //Eloc_temp += interaction(x, nx, dim);
 
 
                 Eloc += Eloc_temp;

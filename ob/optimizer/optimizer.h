@@ -6,7 +6,7 @@
 class Optimizer {
 public:
     Optimizer();
-    virtual void optimizeWeights() {}
+    virtual void optimizeWeights(NeuralQuantumState *nqs, Eigen::VectorXd grad, int cycles) = 0;
 };
 
 #endif // OPTIMIZER_H

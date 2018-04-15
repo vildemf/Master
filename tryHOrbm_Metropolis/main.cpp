@@ -28,7 +28,7 @@ int main()
     double sig = 1.0; // Normal distribution visibles
     double sig2 = sig*sig;
     double omega = 1.0;
-    double eta = 0.1; // SGD learning rate
+    double eta = 0.001; // SGD learning rate
     double x_mean;  // Normal distribution visibles
     double der1lnPsi;
     double der2lnPsi;
@@ -114,9 +114,9 @@ int main()
     // METROPOLIS specifics
     random_device rd_step;
     default_random_engine generator_step(rd_step());
-    std::uniform_real_distribution<double> distribution_setStep(-1,1);
+    std::uniform_real_distribution<double> distribution_setStep(-0.5,0.5);
 
-    double step = 1.0;
+    double step = 1.7;
     VectorXd metropolis_step;
     metropolis_step.resize(nx);
     for (int i=0; i<nx; i++) {
@@ -163,9 +163,15 @@ int main()
         // Sampling loop
         for (int samples=0; samples<n_samples; samples++) {
             // Suggest new positions
-            double random_num = distribution_setStep(generator_step);
+            //double random_num = distribution_setStep(generator_step);
             //double random_num = (double)mt_rand_setStep()/mt_rand_setStep.max();
-            x_trial = x + (random_num)*metropolis_step;
+
+
+            //x_trial = x + (random_num)*metropolis_step;
+
+            for (int i=0; i<nx; i++) {
+                x_trial(i) = x(i) + distribution_setStep(generator_step)*step;
+            }
 
             Psi_factor1 = 0.0;
             for (int i=0; i<nx; i++) {

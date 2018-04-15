@@ -8,7 +8,10 @@ private:
     double m_psiFactor1;
     double m_psiFactor2;
     Eigen::VectorXd m_Q;
+    std::mt19937_64 m_randomEngine; // For the distributions
 
+
+    void setup(int nh, int nx, int dim, double sigma);
     void setupWeights();
     void setupPositions();
 
@@ -25,7 +28,9 @@ public:
     Eigen::MatrixXd m_w;
 
     NeuralQuantumState(int nh, int nx, int dim, double sigma);
+    NeuralQuantumState(int nh, int nx, int dim, double sigma, int seed);
     double computePsi();
+    double computePsi(Eigen::VectorXd x); // Needed for Sampler Metropolis method
 };
 
 #endif // NEURALQUANTUMSTATE_H
