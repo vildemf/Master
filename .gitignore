@@ -1,2 +1,16 @@
 # Git ignore
 
+# .pro files from Qt
+*.pro*
+
+# Stupid Apple folder file
+.DS_Store
+
+# Old files
+./main.cpp
+./tryHOrbm_Metropolis/
+
+# C++
+*.o
+*.x
+*.out
