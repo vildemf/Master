@@ -1,7 +1,7 @@
 # Git ignore
 
 # .pro files from Qt
-*.pro*
+*.pro.user
 
 # Stupid Apple folder file
 .DS_Store
