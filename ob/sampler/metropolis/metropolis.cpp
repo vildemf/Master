@@ -1,32 +1,70 @@
 #include "metropolis.h"
 
-Metropolis::Metropolis(int nSamples, int nCycles, Hamiltonian *hamiltonian,
-                       NeuralQuantumState *nqs) : Sampler(nSamples, nCycles, hamiltonian, nqs) {
-    m_psi = m_nqs->computePsi(); // Set the Psi variable to correspond to the initial positions
+Metropolis::Metropolis(int nSamples, int nCycles, double step, Hamiltonian &hamiltonian,
+                       NeuralQuantumState &nqs, Optimizer &optimizer) :
+    Sampler(nSamples, nCycles, hamiltonian, nqs, optimizer) {
+    m_psi = m_nqs.computePsi(); // Set the Psi variable to correspond to the initial positions
     m_accepted = 0.0;
+    m_step = step;
+    m_distributionStep = std::uniform_real_distribution<double>(-0.5, 0.5);
+    m_distributionTest = std::uniform_real_distribution<double>(0.0, 1.0);
 }
 
-void Metropolis::samplePositions() {
-    // Suggest new positions
-    double random_num = distribution_setStep(generator_step);
+Metropolis::Metropolis(int nSamples, int nCycles, double step, Hamiltonian &hamiltonian,
+                       NeuralQuantumState &nqs, Optimizer &optimizer, int seed) :
+    Sampler(nSamples, nCycles, hamiltonian, nqs, optimizer, seed) {
+    m_psi = m_nqs.computePsi(); // Set the Psi variable to correspond to the initial positions
+    m_accepted = 0.0;
+    m_step = step;
+    m_distributionStep = std::uniform_real_distribution<double>(-0.5, 0.5);
+    m_distributionTest = std::uniform_real_distribution<double>(0.0, 1.0);
+}
 
-    //OBS: should be different random number for each coordinate?
-    Eigen::VectorXd x_trial = x + (random_num)*metropolis_step;
-
-    double psi_trial = nqs->computePsi(x_trial);
-
-    double p = m_psi*m_psi;
-    double p_trial = psi_trial*psi_trial;\
-    double p_ratio = p_trial/p;
-
-    if (p_trial>p) {
-        m_nqs->m_x = x_trial;
-        m_psi = psi_trial;
-        m_accepted++;
-    } else if (distribution_setH(generator_h) < p_ratio) {
-        m_nqs->m_x = x_trial;
-        m_psi = psi_trial;
-        m_accepted++;
+// Update all coordinates of all particles pr sampling
+/*
+void Metropolis::samplePositions(int &accepted) {
+    // Suggestion of new position xTrial
+    Eigen::VectorXd xTrial;
+    xTrial.resize(m_nqs.m_nx);
+    for (int i=0; i<m_nqs.m_nx; i++) {
+        xTrial(i) = m_nqs.m_x(i) + m_distributionStep(m_randomEngine)*m_step;
     }
 
+    double psiTrial = m_nqs.computePsi(xTrial);
+
+    double probCurrent = m_psi*m_psi;
+    double probTrial = psiTrial*psiTrial;\
+    double probRatio = probTrial/probCurrent;
+
+    if ((1.0 < probRatio) || (m_distributionTest(m_randomEngine) < probRatio)) {
+        m_nqs.m_x = xTrial;
+        m_psi = psiTrial;
+        //m_accepted++;
+        accepted++;
+    }
 }
+*/
+
+// Update one coordinate at a time (one coordinate pr one sampling)
+void Metropolis::samplePositions(int &accepted) {
+    // Suggestion of new position xTrial
+    Eigen::VectorXd xTrial = m_nqs.m_x;
+    std::uniform_int_distribution<> mrand(0, m_nqs.m_nx-1);
+    int updateCoordinate = mrand(m_randomEngine);
+
+    xTrial(updateCoordinate) += m_distributionStep(m_randomEngine)*m_step;
+
+    double psiTrial = m_nqs.computePsi(xTrial);
+
+    double probCurrent = m_psi*m_psi;
+    double probTrial = psiTrial*psiTrial;\
+    double probRatio = probTrial/probCurrent;
+
+    if ((1.0 < probRatio) || (m_distributionTest(m_randomEngine) < probRatio)) {
+        m_nqs.m_x = xTrial;
+        m_psi = psiTrial;
+        //m_accepted++;
+        accepted++;
+    }
+}
+

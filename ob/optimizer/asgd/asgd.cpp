@@ -13,7 +13,7 @@ Asgd::Asgd(double A, double tprev, double t, double a, double fmin,
     m_gradPrev.resize(nPar);
 }
 
-void Asgd::optimizeWeights(NeuralQuantumState *nqs, Eigen::VectorXd grad, int cycles) {
+void Asgd::optimizeWeights(NeuralQuantumState &nqs, Eigen::VectorXd grad, int cycles) {
     double f = m_fmin + (m_fmax - m_fmin)/(1 - (m_fmax/m_fmin)*exp(-m_asgdXprev/m_asgdOmega));
     m_t = 0;
     if (m_t < (m_tprev + f)) m_t=m_tprev+f;
@@ -22,19 +22,19 @@ void Asgd::optimizeWeights(NeuralQuantumState *nqs, Eigen::VectorXd grad, int cy
 
     //cout << f << " " << t << " " << asgd_X_prev << gamma << endl;
     // Compute new parameters
-    for (int i=0; i<nqs->m_nx; i++) {
+    for (int i=0; i<nqs.m_nx; i++) {
         //outfile << a(i) << " ";
-        nqs->m_a(i) = nqs->m_a(i) - gamma*grad(i);
+        nqs.m_a(i) = nqs.m_a(i) - gamma*grad(i);
     }
-    for (int j=0; j<nqs->m_nh; j++) {
+    for (int j=0; j<nqs.m_nh; j++) {
         //outfile << b(j) << " ";
-        nqs->m_b(j) = nqs->m_b(j) - gamma*grad(nqs->m_nx + j);
+        nqs.m_b(j) = nqs.m_b(j) - gamma*grad(nqs.m_nx + j);
     }
-    int k = nqs->m_nx + nqs->m_nh;
-    for (int i=0; i<nqs->m_nx; i++) {
-        for (int j=0; j<nqs->m_nh; j++) {
+    int k = nqs.m_nx + nqs.m_nh;
+    for (int i=0; i<nqs.m_nx; i++) {
+        for (int j=0; j<nqs.m_nh; j++) {
             //outfile << w(i,j) << " ";
-            nqs->m_w(i,j) = nqs->m_w(i,j) - gamma*grad(k);
+            nqs.m_w(i,j) = nqs.m_w(i,j) - gamma*grad(k);
             k++;
         }
     }

@@ -2,6 +2,7 @@
 #define NEURALQUANTUMSTATE_H
 
 #include <Eigen/Dense>
+#include <random>
 
 class NeuralQuantumState {
 private:

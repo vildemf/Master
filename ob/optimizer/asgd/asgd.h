@@ -21,7 +21,7 @@ private:
 public:
     Asgd(double m_A, double m_tprev, double m_t, double m_a, double m_fmin,
     double m_fmax, double m_asgdOmega, double nPar);
-    void optimizeWeights(NeuralQuantumState *nqs, Eigen::VectorXd grad, int cycles);
+    void optimizeWeights(NeuralQuantumState &nqs, Eigen::VectorXd grad, int cycles);
 };
 
 #endif // ASGD_H

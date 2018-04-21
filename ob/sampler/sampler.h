@@ -2,24 +2,29 @@
 #define SAMPLER_H
 
 #include "hamiltonian.h"
+#include "optimizer/sgd/sgd.h"
+#include "optimizer/asgd/asgd.h"
+#include <random>
 
 class Sampler {
-private:
+protected:
     int m_nSamples;
     int m_nCycles;
-    mt19937_64 m_randomEngine;
+    std::mt19937_64 m_randomEngine;
 
-    class Hamiltonian *m_hamiltonian;
-    class NeuralQuantumState *m_nqs;
-    class Minimizer *m_minimizer;
+
 
 public:
-    Sampler(int nSamples, int nCycles, Hamiltonian *hamiltonian,
-            NeuralQuantumState *nqs);
-    Sampler(int nSamples, int nCycles, Hamiltonian *hamiltonian,
-            NeuralQuantumState *nqs, int seed);
-    void runSampling();
-    virtual void samplePositions() = 0;
+    Hamiltonian m_hamiltonian;
+    NeuralQuantumState m_nqs;
+    Optimizer &m_optimizer; // I put & here bc not allowed to instanciate an abstract class. Bad practice??
+    // See more: https://stackoverflow.com/questions/12387239/reference-member-variables-as-class-members
+    Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
+            NeuralQuantumState &nqs, Optimizer &optimizer);
+    Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
+            NeuralQuantumState &nqs, Optimizer &optimizer, int seed);
+    void runOptimizationSampling();
+    virtual void samplePositions(int &accepted) = 0;
 };
 
 #endif // SAMPLER_H

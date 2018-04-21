@@ -6,11 +6,16 @@
 class Metropolis : public Sampler {
 private:
     double m_psi;
+    double m_step;
     double m_accepted;
+    std::uniform_real_distribution<double> m_distributionStep;
+    std::uniform_real_distribution<double> m_distributionTest;
 public:
-    Metropolis(int nSamples, int nCycles, Hamiltonian *hamiltonian,
-               NeuralQuantumState *nqs);
-    void samplePositions();
+    Metropolis(int nSamples, int nCycles, double step, Hamiltonian &hamiltonian,
+               NeuralQuantumState &nqs, Optimizer &optimizer);
+    Metropolis(int nSamples, int nCycles, double step, Hamiltonian &hamiltonian,
+               NeuralQuantumState &nqs, Optimizer &optimizer, int seed);
+    void samplePositions(int &accepted);
 };
 
 #endif // METROPOLIS_H

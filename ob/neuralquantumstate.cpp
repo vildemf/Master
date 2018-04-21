@@ -24,8 +24,13 @@ void NeuralQuantumState::setup(int nh, int nx, int dim, double sigma) {
     m_b.resize(m_nh); // hidden bias
     m_w.resize(m_nx, m_nh); // weights
 
-    setupWeights();
-    setupPositions();
+    m_x = Eigen::VectorXd::Random(nx);
+    m_a = Eigen::VectorXd::Random(nx);
+    m_b = Eigen::VectorXd::Random(nh);
+    m_w = Eigen::MatrixXd::Random(nx, nh);
+
+    //setupWeights();
+    //setupPositions();
 }
 
 void NeuralQuantumState::setupWeights() {

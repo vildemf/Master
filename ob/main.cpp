@@ -1,41 +1,47 @@
 #include <iostream>
+#include "sampler/metropolis/metropolis.h"
+#include "sampler/gibbs/gibbs.h"
 
 using namespace std;
 
 int main() {
     // Nqs parameters
-    int nx = 6; // Number which represents particles*dimensions.
+    int nx = 4; // Number which represents particles*dimensions.
     int nh = 2; // Number of hidden units.
-    int dim = 3; // Number of spatial dimensions
-    int n_par = nx + nh + nx*nh;
-    double sig = 1.035; // Normal distribution visibles
-    double sig2 = sig*sig;
+    int dim = 2; // Number of spatial dimensions
+    double sigma = 1.0; // Normal distribution visibles
 
     // Sampler parameters
-    int n_cycles = 15000;  // 1000
-    int n_samples = 10000;  // 100
+    int nCycles = 15000;  // 1000
+    int nSamples = 10000;  // 100
+    // Metropolis
+    double step = 1.0;
 
     // Hamiltonian parameters
     double omega = 1.0;
 
     // Optimizer parameters
     // SGD parameter
-    double eta = 0.1; // SGD learning rate
+    double eta = 0.01; // SGD learning rate
+    int nPar = nx + nh + nx*nh;
     // ASGD parameters
     double A = 20.0;
     double t_prev = A;
     double t = A;
     double asgd_X_prev;
 
-
-    double x_mean;  // Normal distribution visibles
-    double der1lnPsi;
-    double der2lnPsi;
-
-    random_device seedGenerator;
+    //random_device seedGenerator;
 
 
+    // Create objects for the sampler:
+    Hamiltonian hamiltonian(omega);
+    NeuralQuantumState nqs(nh, nx, dim, sigma);
+    Sgd optimizer(eta, nPar);
 
+    // Create the sampler:
+    Metropolis metropolisSampler(nSamples, nCycles, step, hamiltonian, nqs, optimizer);
+
+    metropolisSampler.runOptimizationSampling();
 
 
 

@@ -1,51 +1,52 @@
 #include "hamiltonian.h"
 
 
-Hamiltonian::Hamiltonian() {
-
+Hamiltonian::Hamiltonian(double omega) {
+    m_omega = omega;
 }
 
-double Hamiltonian::computeLocalEnergy(NeuralQuantumState *nqs) {
-    Eigen::VectorXd Q = nqs->m_b + (1.0/nqs->m_sig2)*(nqs->m_x.transpose()*nqs->m_w).transpose();
+
+double Hamiltonian::computeLocalEnergy(NeuralQuantumState &nqs) {
+    Eigen::VectorXd Q = nqs.m_b + (1.0/nqs.m_sig2)*(nqs.m_x.transpose()*nqs.m_w).transpose();
     double Eloc_temp = 0;
     // Loop over the visibles (n_particles*n_coordinates) for the Laplacian
-    for (int r=0; r<nqs->m_nx; r++) {
+    for (int r=0; r<nqs.m_nx; r++) {
         double sum1 = 0;
         double sum2 = 0;
-        for (int j=0; j<nqs->m_nh; j++) {
-            sum1 += nqs->m_w(r,j)/(1.0+exp(-Q(j)));
-            sum2 += nqs->m_w(r,j)*nqs->m_w(r,j)*exp(Q(j))/((exp(Q(j))+1.0)*(exp(Q(j))+1.0));
+        for (int j=0; j<nqs.m_nh; j++) {
+            sum1 += nqs.m_w(r,j)/(1.0+exp(-Q(j)));
+            sum2 += nqs.m_w(r,j)*nqs.m_w(r,j)*exp(Q(j))/((exp(Q(j))+1.0)*(exp(Q(j))+1.0));
         }
-        double der1lnPsi = -(nqs->m_x(r) - nqs->m_a(r))/nqs->m_sig2 + sum1/nqs->m_sig2;
-        double der2lnPsi = -1.0/nqs->m_sig2 + sum2/(nqs->m_sig2*nqs->m_sig2);
-        Eloc_temp += -der1lnPsi*der1lnPsi - der2lnPsi + m_omega*m_omega*nqs->m_x(r)*nqs->m_x(r);
+        double der1lnPsi = -(nqs.m_x(r) - nqs.m_a(r))/nqs.m_sig2 + sum1/nqs.m_sig2;
+        double der2lnPsi = -1.0/nqs.m_sig2 + sum2/(nqs.m_sig2*nqs.m_sig2);
+        Eloc_temp += -der1lnPsi*der1lnPsi - der2lnPsi + m_omega*m_omega*nqs.m_x(r)*nqs.m_x(r);
 
 
     }
     Eloc_temp = 0.5*Eloc_temp;
 
     // With interaction:
-    Eloc_temp += interaction(nqs->m_x, nqs->m_nx, nqs->m_dim);
+    Eloc_temp += interaction(nqs.m_x, nqs.m_nx, nqs.m_dim);
 
     return Eloc_temp;
 }
 
-Eigen::VectorXd Hamiltonian::computeLocalEnergyGradientComponent(NeuralQuantumState *nqs) {
+Eigen::VectorXd Hamiltonian::computeLocalEnergyGradientComponent(NeuralQuantumState &nqs) {
 
     // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
-    Eigen::VectorXd Q = nqs->m_b + (1.0/nqs->m_sig2)*(nqs->m_x.transpose()*nqs->m_w).transpose();
+    Eigen::VectorXd Q = nqs.m_b + (1.0/nqs.m_sig2)*(nqs.m_x.transpose()*nqs.m_w).transpose();
     Eigen::VectorXd derPsi_temp;
-    derPsi_temp.resize(nqs->m_nx + nqs->m_nh + nqs->m_nx*nqs->m_nh);
-    for (int k=0; k<nqs->m_nx; k++) {
-        derPsi_temp(k) = (nqs->m_x(k) - nqs->m_a(k))/nqs->m_sig2;
+    derPsi_temp.resize(nqs.m_nx + nqs.m_nh + nqs.m_nx*nqs.m_nh);
+    for (int k=0; k<nqs.m_nx; k++) {
+        derPsi_temp(k) = (nqs.m_x(k) - nqs.m_a(k))/nqs.m_sig2;
     }
-    for (int k=nqs->m_nx; k<(nqs->m_nx+nqs->m_nh); k++) {
-        derPsi_temp(k) = 1.0/(1.0+exp(-Q(k-nqs->m_nx)));
+    for (int k=nqs.m_nx; k<(nqs.m_nx+nqs.m_nh); k++) {
+        derPsi_temp(k) = 1.0/(1.0+exp(-Q(k-nqs.m_nx)));
     }
-    int k=nqs->m_nx + nqs->m_nh;
-    for (int i=0; i<nqs->m_nx; i++) {
-        for (int j=0; j<nqs->m_nh; j++) {
-            derPsi_temp(k) = nqs->m_x(i)/(nqs->m_sig2*(1.0+exp(-Q(j))));
+    int k=nqs.m_nx + nqs.m_nh;
+    for (int i=0; i<nqs.m_nx; i++) {
+        for (int j=0; j<nqs.m_nh; j++) {
+            derPsi_temp(k) = nqs.m_x(i)/(nqs.m_sig2*(1.0+exp(-Q(j))));
             k++;
         }
     }

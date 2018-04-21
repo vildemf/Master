@@ -28,7 +28,7 @@ int main()
     double sig = 1.0; // Normal distribution visibles
     double sig2 = sig*sig;
     double omega = 1.0;
-    double eta = 0.001; // SGD learning rate
+    double eta = 0.01; // SGD learning rate
     double x_mean;  // Normal distribution visibles
     double der1lnPsi;
     double der2lnPsi;
@@ -116,7 +116,7 @@ int main()
     default_random_engine generator_step(rd_step());
     std::uniform_real_distribution<double> distribution_setStep(-0.5,0.5);
 
-    double step = 1.7;
+    double step = 2.0;
     VectorXd metropolis_step;
     metropolis_step.resize(nx);
     for (int i=0; i<nx; i++) {
@@ -165,9 +165,8 @@ int main()
             // Suggest new positions
             //double random_num = distribution_setStep(generator_step);
             //double random_num = (double)mt_rand_setStep()/mt_rand_setStep.max();
-
-
             //x_trial = x + (random_num)*metropolis_step;
+
 
             for (int i=0; i<nx; i++) {
                 x_trial(i) = x(i) + distribution_setStep(generator_step)*step;
@@ -188,14 +187,14 @@ int main()
             P = Psi*Psi;
             P_trial = Psi_trial*Psi_trial;\
             P_ratio = P_trial/P;
-            //cout << Psi << "   " << Psi_trial << endl;
-            //cout << random_num << endl;
-            // The Metropolis test
-            //if (cycles>60 && samples>1000) {
-                //cout << Psi << "   " << Psi_trial << endl;
-            //    cout << x << endl;
+                        //cout << Psi << "   " << Psi_trial << endl;
+                        //cout << random_num << endl;
+                        // The Metropolis test
+                        //if (cycles>60 && samples>1000) {
+                            //cout << Psi << "   " << Psi_trial << endl;
+                        //    cout << x << endl;
 
-            //}
+                        //}
             if (P_trial>P) {
                 x = x_trial;
                 Psi = Psi_trial;
@@ -254,6 +253,99 @@ int main()
                 EderPsi += Eloc_temp*derPsi_temp;
                 Eloc2 += Eloc_temp*Eloc_temp;
             }
+            /*
+
+            for (int particle=0; particle<nx-2; particle+=2) {
+                for (int dim=0; dim<2; dim++) {
+                    x_trial(particle+dim) = x(particle+dim) + distribution_setStep(generator_step)*step;
+                }
+
+
+                Psi_factor1 = 0.0;
+                for (int i=0; i<nx; i++) {
+                    Psi_factor1 += (x_trial(i) - a(i))*(x_trial(i) - a(i));
+                }
+                Psi_factor2 = 1.0;
+                Q = b + (((1.0/sig2)*x_trial).transpose()*w).transpose();
+                for (int j=0; j<nh; j++) {
+                    Psi_factor2 *= (1 + exp(Q(j)));
+                }
+                Psi_factor1 = exp(-Psi_factor1/(2.0*sig2));
+                Psi_trial = Psi_factor1*Psi_factor2;
+
+                P = Psi*Psi;
+                P_trial = Psi_trial*Psi_trial;\
+                P_ratio = P_trial/P;
+                    //cout << Psi << "   " << Psi_trial << endl;
+                    //cout << random_num << endl;
+                    // The Metropolis test
+                    //if (cycles>60 && samples>1000) {
+                        //cout << Psi << "   " << Psi_trial << endl;
+                    //    cout << x << endl;
+
+                    //}
+                if (P_trial>P) {
+                    x = x_trial;
+                    Psi = Psi_trial;
+                    accepted1++;
+                    accepted2++;
+                } else if (distribution_setH(generator_h) < P_ratio) {
+                     x = x_trial;
+                    Psi = Psi_trial;
+                    accepted1++;
+                    accepted2++;
+                }
+
+                if (samples > 0.1*n_samples) {
+                    // Compute the local energy
+                    Q = b + (1.0/sig2)*(x.transpose()*w).transpose();
+                    Eloc_temp = 0;
+                    // Loop over the visibles (n_particles*n_coordinates) for the Laplacian
+                    for (int r=0; r<nx; r++) {
+                        double sum1 = 0;
+                        double sum2 = 0;
+                        for (int j=0; j<nh; j++) {
+                            sum1 += w(r,j)/(1.0+exp(-Q(j)));
+                            sum2 += w(r,j)*w(r,j)*exp(Q(j))/((exp(Q(j))+1.0)*(exp(Q(j))+1.0));
+                        }
+                        der1lnPsi = -(x(r) - a(r))/sig2 + sum1/sig2;
+                        der2lnPsi = -1.0/sig2 + sum2/(sig2*sig2);
+                        Eloc_temp += -der1lnPsi*der1lnPsi - der2lnPsi + omega*omega*x(r)*x(r);
+
+
+                    }
+                    Eloc_temp = 0.5*Eloc_temp;
+
+                    // With interaction:
+                    //Eloc_temp += interaction(x, nx);
+
+
+                    Eloc += Eloc_temp;
+
+                    // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
+                    for (int k=0; k<nx; k++) {
+                        derPsi_temp(k) = (x(k) - a(k))/sig2;
+                    }
+                    for (int k=nx; k<(nx+nh); k++) {
+                        derPsi_temp(k) = 1.0/(1.0+exp(-Q(k-nx)));
+                    }
+                    int k=nx + nh;
+                    for (int i=0; i<nx; i++) {
+                        for (int j=0; j<nh; j++) {
+                            derPsi_temp(k) = x(i)/(sig2*(1.0+exp(-Q(j))));
+                            k++;
+                        }
+                    }
+
+                    // Add up values for expectation values
+                    derPsi += derPsi_temp;
+                    EderPsi += Eloc_temp*derPsi_temp;
+                    Eloc2 += Eloc_temp*Eloc_temp;
+                }
+            }
+            */
+
+
         }
         // Compute expectation values
         double n_samp = n_samples - 0.1*n_samples;
@@ -337,7 +429,7 @@ void SGD(VectorXd &a, VectorXd &b, MatrixXd &w, VectorXd &grad, double eta, int 
 void ASGD(VectorXd &a, VectorXd &b, MatrixXd &w, VectorXd &grad, int cycles, int nx, int nh,
           double &asgd_X_prev, VectorXd &grad_prev, double &t_prev, double t, ofstream &outfile) {
     // ASGD parameters
-    double a_asgd = 0.1; //0.1;
+    double a_asgd = 0.001; //0.1;
     double A = 20.0;
     double f_min = -0.5;
     double f_max = 2.0;

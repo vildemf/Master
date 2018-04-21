@@ -15,7 +15,7 @@ private:
     double m_tprev;
 public:
     Sgd(double eta, double nPar);
-    void optimizeWeights(NeuralQuantumState *nqs, Eigen::VectorXd grad, int cycles);
+    void optimizeWeights(NeuralQuantumState &nqs, Eigen::VectorXd grad, int cycles);
 };
 
 #endif // SGD_H
