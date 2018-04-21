@@ -1,6 +1,8 @@
 # Git ignore
 
-# .pro files from Qt
+# .pro files from Qt etc
+build-*
+Build-*
 *.pro.user
 
 # Stupid Apple folder file
