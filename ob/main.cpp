@@ -13,7 +13,7 @@ int main() {
     bool gaussianInitialization = true; // Weights & biases (a,b,w) initialized uniformally or gaussian
 
     // Sampler parameters
-    int nCycles = 15000;  // 1000
+    int nCycles = 200;  // 1000
     int nSamples = 10000;  // 100
     // Metropolis
     double step = 1.0;
