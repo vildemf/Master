@@ -12,9 +12,9 @@ private:
     std::uniform_real_distribution<double> m_distributionTest;
 public:
     Metropolis(int nSamples, int nCycles, double step, Hamiltonian &hamiltonian,
-               NeuralQuantumState &nqs, Optimizer &optimizer);
+               NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename);
     Metropolis(int nSamples, int nCycles, double step, Hamiltonian &hamiltonian,
-               NeuralQuantumState &nqs, Optimizer &optimizer, int seed);
+               NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename, int seed);
     void samplePositions(int &accepted);
 };
 

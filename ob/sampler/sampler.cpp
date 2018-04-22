@@ -2,21 +2,22 @@
 #include <iostream>
 
 Sampler::Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-                 NeuralQuantumState &nqs, Optimizer &optimizer) :
+                 NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename) :
     m_hamiltonian(hamiltonian), m_nqs(nqs), m_optimizer(optimizer) {
     m_nSamples = nSamples;
     m_nCycles = nCycles;
-    m_outfile.open("/Users/Vilde/Documents/masters/NQS_paper/tryHOrbm/RBMoutput.txt");
+    m_outfile.open(filename);
 
     std::random_device rd;
     m_randomEngine = std::mt19937_64(rd());
 }
 
 Sampler::Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-                 NeuralQuantumState &nqs, Optimizer &optimizer, int seed) :
+                 NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename, int seed) :
     m_hamiltonian(hamiltonian), m_nqs(nqs), m_optimizer(optimizer) {
     m_nSamples = nSamples;
     m_nCycles = nCycles;
+    m_outfile.open(filename);
 
     m_randomEngine = std::mt19937_64(seed);
 }

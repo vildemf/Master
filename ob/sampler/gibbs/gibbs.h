@@ -9,9 +9,9 @@ private:
 
 public:
     Gibbs(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-          NeuralQuantumState &nqs, Optimizer &optimizer);
+          NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename);
     Gibbs(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-          NeuralQuantumState &nqs, Optimizer &optimizer, int seed);
+          NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename, int seed);
     void samplePositions(int &accepted);
 };
 

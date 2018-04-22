@@ -27,6 +27,9 @@ int main() {
     double eta = 0.01; // SGD learning rate
     int nPar = nx + nh + nx*nh;
 
+    // filename
+    string filename = "/Users/Vilde/Documents/masters/NQS_paper/tryHOrbm/RBMoutput.txt";
+
 
     // Create objects for the sampler:
     Hamiltonian hamiltonian(omega, includeInteraction);
@@ -34,7 +37,7 @@ int main() {
     Sgd optimizer(eta, nPar);
 
     // Create the sampler:
-    Metropolis metropolisSampler(nSamples, nCycles, step, hamiltonian, nqs, optimizer);
+    Metropolis metropolisSampler(nSamples, nCycles, step, hamiltonian, nqs, optimizer, filename);
 
     metropolisSampler.runOptimizationSampling();
 
