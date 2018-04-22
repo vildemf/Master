@@ -10,17 +10,17 @@ int main() {
     int nh = 2; // Number of hidden units.
     int dim = 2; // Number of spatial dimensions
     double sigma = 1.0; // Normal distribution visibles
-    bool gaussianInitialization = true; // Weights & biases (a,b,w) initialized uniformally or gaussian
+    bool gaussianInitialization = true; // Weights & biases (a,b,w) initialized uniformly or gaussian
 
     // Sampler parameters
-    int nCycles = 200;  // 1000
+    int nCycles = 300;  // 1000
     int nSamples = 10000;  // 100
     // Metropolis
-    double step = 1.0;
+    double step = 2.5;
 
     // Hamiltonian parameters
     double omega = 1.0;
-    bool includeInteraction = false; // Include interaction or not
+    bool includeInteraction = true; // Include interaction or not
 
     // Optimizer parameters
     // SGD parameter
