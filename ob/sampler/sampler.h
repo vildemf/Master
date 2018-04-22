@@ -5,13 +5,14 @@
 #include "optimizer/sgd/sgd.h"
 #include "optimizer/asgd/asgd.h"
 #include <random>
+#include <fstream>
 
 class Sampler {
 protected:
     int m_nSamples;
     int m_nCycles;
+    std::ofstream m_outfile;
     std::mt19937_64 m_randomEngine;
-
 
 
 public:

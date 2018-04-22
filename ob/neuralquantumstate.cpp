@@ -1,18 +1,18 @@
 #include "neuralquantumstate.h"
 #include <random>
 
-NeuralQuantumState::NeuralQuantumState(int nh, int nx, int dim, double sigma) {
+NeuralQuantumState::NeuralQuantumState(int nh, int nx, int dim, double sigma, bool gaussianInitialization) {
     std::random_device rd;
     m_randomEngine = std::mt19937_64(rd());
-    setup(nh, nx, dim, sigma);
+    setup(nh, nx, dim, sigma, gaussianInitialization);
 }
 
-NeuralQuantumState::NeuralQuantumState(int nh, int nx, int dim, double sigma, int seed) {
+NeuralQuantumState::NeuralQuantumState(int nh, int nx, int dim, double sigma, bool gaussianInitialization, int seed) {
     m_randomEngine = std::mt19937_64(seed);
-    setup(nh, nx, dim, sigma);
+    setup(nh, nx, dim, sigma, gaussianInitialization);
 }
 
-void NeuralQuantumState::setup(int nh, int nx, int dim, double sigma) {
+void NeuralQuantumState::setup(int nh, int nx, int dim, double sigma, bool gaussianInitialization) {
     m_nx = nx;
     m_nh = nh;
     m_dim  = dim;
@@ -23,14 +23,16 @@ void NeuralQuantumState::setup(int nh, int nx, int dim, double sigma) {
     m_a.resize(m_nx); // visible bias
     m_b.resize(m_nh); // hidden bias
     m_w.resize(m_nx, m_nh); // weights
+    if (gaussianInitialization) {
+        setupWeights();
+    } else {
+        m_x = Eigen::VectorXd::Random(nx);
+        m_a = Eigen::VectorXd::Random(nx);
+        m_b = Eigen::VectorXd::Random(nh);
+        m_w = Eigen::MatrixXd::Random(nx, nh);
+    }
 
-    m_x = Eigen::VectorXd::Random(nx);
-    m_a = Eigen::VectorXd::Random(nx);
-    m_b = Eigen::VectorXd::Random(nh);
-    m_w = Eigen::MatrixXd::Random(nx, nh);
-
-    //setupWeights();
-    //setupPositions();
+    setupPositions();
 }
 
 void NeuralQuantumState::setupWeights() {

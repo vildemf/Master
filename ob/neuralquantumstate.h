@@ -12,7 +12,7 @@ private:
     std::mt19937_64 m_randomEngine; // For the distributions
 
 
-    void setup(int nh, int nx, int dim, double sigma);
+    void setup(int nh, int nx, int dim, double sigma, bool gaussianInitialization);
     void setupWeights();
     void setupPositions();
 
@@ -28,8 +28,8 @@ public:
     Eigen::VectorXd m_b;
     Eigen::MatrixXd m_w;
 
-    NeuralQuantumState(int nh, int nx, int dim, double sigma);
-    NeuralQuantumState(int nh, int nx, int dim, double sigma, int seed);
+    NeuralQuantumState(int nh, int nx, int dim, double sigma, bool gaussianInitialization);
+    NeuralQuantumState(int nh, int nx, int dim, double sigma, bool gaussianInitialization, int seed);
     double computePsi();
     double computePsi(Eigen::VectorXd x); // Needed for Sampler Metropolis method
 };

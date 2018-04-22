@@ -1,8 +1,9 @@
 #include "hamiltonian.h"
 
 
-Hamiltonian::Hamiltonian(double omega) {
+Hamiltonian::Hamiltonian(double omega, bool includeInteraction) {
     m_omega = omega;
+    m_includeInteraction = includeInteraction;
 }
 
 
@@ -26,8 +27,9 @@ double Hamiltonian::computeLocalEnergy(NeuralQuantumState &nqs) {
     Eloc_temp = 0.5*Eloc_temp;
 
     // With interaction:
-    Eloc_temp += interaction(nqs.m_x, nqs.m_nx, nqs.m_dim);
-
+    if (m_includeInteraction) {
+        Eloc_temp += interaction(nqs.m_x, nqs.m_nx, nqs.m_dim);
+    }
     return Eloc_temp;
 }
 

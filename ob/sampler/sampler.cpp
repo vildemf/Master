@@ -6,9 +6,7 @@ Sampler::Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
     m_hamiltonian(hamiltonian), m_nqs(nqs), m_optimizer(optimizer) {
     m_nSamples = nSamples;
     m_nCycles = nCycles;
-    //m_hamiltonian = hamiltonian;
-    //m_nqs = nqs;
-    //m_optimizer = optimizer;
+    m_outfile.open("RBMoutput.txt");
 
     std::random_device rd;
     m_randomEngine = std::mt19937_64(rd());
@@ -19,9 +17,6 @@ Sampler::Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
     m_hamiltonian(hamiltonian), m_nqs(nqs), m_optimizer(optimizer) {
     m_nSamples = nSamples;
     m_nCycles = nCycles;
-    //m_hamiltonian = hamiltonian;
-    //m_nqs = nqs;
-    //m_optimizer = optimizer;
 
     m_randomEngine = std::mt19937_64(seed);
 }
@@ -98,5 +93,7 @@ void Sampler::runOptimizationSampling() {
              //<< w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " "
              //<< w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) <<
                std::endl;
+        m_outfile << cycles << "   " << Eloc << "   " << variance << "   "
+                << acceptedRatio << "\n";
     }
 }
