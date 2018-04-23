@@ -22,7 +22,7 @@ int main() {
     double omega = 1.0;
     bool includeInteraction = true; // Include interaction or not
 
-    // Optimizer parameters (choose between stochastic gradient descent (SGD) or adaptive SGD (ASGD))
+    // Optimizer parameters (choose either stochastic gradient descent (SGD) or adaptive SGD (ASGD))
     int nPar = nx + nh + nx*nh;
     // SGD parameters
     double eta = 0.01;  // must be >0. SGD learning rate (lr)
@@ -48,10 +48,11 @@ int main() {
     Sgd optimizer(eta, nPar);
 
     // Create the sampler:
-    Metropolis metropolisSampler(nSamples, nCycles, step, hamiltonian, nqs, optimizer, filename);
+    //Metropolis metropolisSampler(nSamples, nCycles, step, hamiltonian, nqs, optimizer, filename);
+    Gibbs gibbsSampler(nSamples, nCycles, hamiltonian, nqs, optimizer, filename);
     // Run
-    metropolisSampler.runOptimizationSampling();
-
+    //metropolisSampler.runOptimizationSampling();
+    gibbsSampler.runOptimizationSampling();
 
 
     return 0;

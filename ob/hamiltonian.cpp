@@ -9,7 +9,7 @@ Hamiltonian::Hamiltonian(double omega, bool includeInteraction) {
 
 double Hamiltonian::computeLocalEnergy(NeuralQuantumState &nqs) {
     Eigen::VectorXd Q = nqs.m_b + (1.0/nqs.m_sig2)*(nqs.m_x.transpose()*nqs.m_w).transpose();
-    double Eloc_temp = 0;
+    double ElocTemp = 0;
     // Loop over the visibles (n_particles*n_coordinates) for the Laplacian
     for (int r=0; r<nqs.m_nx; r++) {
         double sum1 = 0;
@@ -20,55 +20,58 @@ double Hamiltonian::computeLocalEnergy(NeuralQuantumState &nqs) {
         }
         double der1lnPsi = -(nqs.m_x(r) - nqs.m_a(r))/nqs.m_sig2 + sum1/nqs.m_sig2;
         double der2lnPsi = -1.0/nqs.m_sig2 + sum2/(nqs.m_sig2*nqs.m_sig2);
-        Eloc_temp += -der1lnPsi*der1lnPsi - der2lnPsi + m_omega*m_omega*nqs.m_x(r)*nqs.m_x(r);
+        // The last term is the Harmonic Oscillator potential
+        ElocTemp += -der1lnPsi*der1lnPsi - der2lnPsi + m_omega*m_omega*nqs.m_x(r)*nqs.m_x(r);
 
 
     }
-    Eloc_temp = 0.5*Eloc_temp;
+    ElocTemp = 0.5*ElocTemp;
 
     // With interaction:
     if (m_includeInteraction) {
-        Eloc_temp += interaction(nqs.m_x, nqs.m_nx, nqs.m_dim);
+        ElocTemp += interaction(nqs.m_x, nqs.m_nx, nqs.m_dim);
     }
-    return Eloc_temp;
+
+    return ElocTemp;
 }
 
 Eigen::VectorXd Hamiltonian::computeLocalEnergyGradientComponent(NeuralQuantumState &nqs) {
 
     // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
     Eigen::VectorXd Q = nqs.m_b + (1.0/nqs.m_sig2)*(nqs.m_x.transpose()*nqs.m_w).transpose();
-    Eigen::VectorXd derPsi_temp;
-    derPsi_temp.resize(nqs.m_nx + nqs.m_nh + nqs.m_nx*nqs.m_nh);
+    Eigen::VectorXd derPsiTemp;
+    derPsiTemp.resize(nqs.m_nx + nqs.m_nh + nqs.m_nx*nqs.m_nh);
+
     for (int k=0; k<nqs.m_nx; k++) {
-        derPsi_temp(k) = (nqs.m_x(k) - nqs.m_a(k))/nqs.m_sig2;
+        derPsiTemp(k) = (nqs.m_x(k) - nqs.m_a(k))/nqs.m_sig2;
     }
     for (int k=nqs.m_nx; k<(nqs.m_nx+nqs.m_nh); k++) {
-        derPsi_temp(k) = 1.0/(1.0+exp(-Q(k-nqs.m_nx)));
+        derPsiTemp(k) = 1.0/(1.0+exp(-Q(k-nqs.m_nx)));
     }
     int k=nqs.m_nx + nqs.m_nh;
     for (int i=0; i<nqs.m_nx; i++) {
         for (int j=0; j<nqs.m_nh; j++) {
-            derPsi_temp(k) = nqs.m_x(i)/(nqs.m_sig2*(1.0+exp(-Q(j))));
+            derPsiTemp(k) = nqs.m_x(i)/(nqs.m_sig2*(1.0+exp(-Q(j))));
             k++;
         }
     }
-    return derPsi_temp;
+    return derPsiTemp;
 }
 
 double Hamiltonian::interaction(Eigen::VectorXd x, int nx, int dim) {
-    double interaction_term = 0;
-    double r_i;
-    double r_dist;
-    double r_dist_i;
+    double interactionTerm = 0;
+    double rDistance;
+    // Loop over each particle
     for (int r=0; r<nx-dim; r+=dim) {
+        // Loop over each particle s that particle r hasn't been paired with
         for (int s=(r+dim); s<nx; s+=dim) {
-            r_dist = 0;
+            rDistance = 0;
+            // Loop over each dimension
             for (int i=0; i<dim; i++) {
-                r_dist_i = x(r+i) - x(s+i);
-                r_dist += r_dist_i*r_dist_i;
+                rDistance += (x(r+i) - x(s+i))*(x(r+i) - x(s+i));
             }
-            interaction_term += 1.0/sqrt(r_dist);
+            interactionTerm += 1.0/sqrt(rDistance);
         }
     }
-    return interaction_term;
+    return interactionTerm;
 }

@@ -47,6 +47,7 @@ void Sampler::runOptimizationSampling() {
     double effectiveSamplings;
     int accepted;
 
+    // Optimization iterations
     for (int cycles=0; cycles<m_nCycles; cycles++) {
         Eloc = 0;
         Eloc2 = 0;
@@ -55,6 +56,7 @@ void Sampler::runOptimizationSampling() {
         derPsi.setZero();
         EderPsi.setZero();
 
+        // Samples
         for (int samples=0; samples<m_nSamples; samples++) {
             samplePositions(accepted);
             if (samples > 0.1*m_nSamples) {
@@ -77,7 +79,7 @@ void Sampler::runOptimizationSampling() {
         derPsi = derPsi/effectiveSamplings;
         EderPsi = EderPsi/effectiveSamplings;
 
-
+        // Other quantities of interest
         variance = Eloc2 - Eloc*Eloc;
         acceptedRatio = accepted/(double)effectiveSamplings;
 
@@ -87,6 +89,7 @@ void Sampler::runOptimizationSampling() {
         // Update weights
         m_optimizer.optimizeWeights(m_nqs, grad, cycles);
 
+        // Terminal output
         std::cout << cycles << "   " << Eloc << "   " << variance << "   " //<< a(0) << "   "
              << acceptedRatio << //" "
              //<< a(1) << " "
@@ -94,6 +97,8 @@ void Sampler::runOptimizationSampling() {
              //<< w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " "
              //<< w(1,0) << " " << w(1,1) << " " << w(1,2) << " " << w(1,3) <<
                std::endl;
+
+        // File output
         m_outfile << cycles << "   " << Eloc << "   " << variance << "   "
                 << acceptedRatio << "\n";
     }
