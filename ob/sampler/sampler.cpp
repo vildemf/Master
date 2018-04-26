@@ -2,22 +2,13 @@
 #include <iostream>
 
 Sampler::Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-                 NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename) :
+                 NeuralQuantumState &nqs, Optimizer &optimizer,
+                 std::string filename, std::string blockFilename, int seed) :
     m_hamiltonian(hamiltonian), m_nqs(nqs), m_optimizer(optimizer) {
     m_nSamples = nSamples;
     m_nCycles = nCycles;
     m_outfile.open(filename);
-
-    std::random_device rd;
-    m_randomEngine = std::mt19937_64(rd());
-}
-
-Sampler::Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-                 NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename, int seed) :
-    m_hamiltonian(hamiltonian), m_nqs(nqs), m_optimizer(optimizer) {
-    m_nSamples = nSamples;
-    m_nCycles = nCycles;
-    m_outfile.open(filename);
+    m_blockOutfile.open(blockFilename);
 
     m_randomEngine = std::mt19937_64(seed);
 }
@@ -70,6 +61,10 @@ void Sampler::runOptimizationSampling() {
                 derPsi += derPsi_temp;
                 EderPsi += Eloc_temp*derPsi_temp;
 
+                // Write the energies for blocking - interested in the final optimization cycle only
+                if (cycles==m_nCycles-1) {
+                    m_blockOutfile << Eloc_temp << "\n";
+                }
             }
         }
 

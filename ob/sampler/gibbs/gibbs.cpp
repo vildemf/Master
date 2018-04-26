@@ -1,15 +1,9 @@
 #include "gibbs.h"
 
 Gibbs::Gibbs(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-             NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename) :
-    Sampler(nSamples, nCycles, hamiltonian, nqs, optimizer, filename) {
-
-    m_distributionH = std::uniform_real_distribution<double>(0,1);
-}
-
-Gibbs::Gibbs(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-             NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename, int seed) :
-    Sampler(nSamples, nCycles, hamiltonian, nqs, optimizer, filename, seed) {
+             NeuralQuantumState &nqs, Optimizer &optimizer,
+             std::string filename,  std::string blockFilename, int seed) :
+    Sampler(nSamples, nCycles, hamiltonian, nqs, optimizer, filename, blockFilename, seed) {
 
     m_distributionH = std::uniform_real_distribution<double>(0,1);
 }

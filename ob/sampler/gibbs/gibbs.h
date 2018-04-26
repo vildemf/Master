@@ -9,9 +9,8 @@ private:
 
 public:
     Gibbs(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-          NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename);
-    Gibbs(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-          NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename, int seed);
+          NeuralQuantumState &nqs, Optimizer &optimizer,
+          std::string filename, std::string blockFilename, int seed);
     void samplePositions(int &accepted);
     double logisticSigmoid(double z);
 };

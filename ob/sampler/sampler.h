@@ -12,6 +12,8 @@ protected:
     int m_nSamples;
     int m_nCycles;
     std::ofstream m_outfile;
+    std::ofstream m_blockOutfile;
+    std::string m_blockFilename;
     std::mt19937_64 m_randomEngine;
 
 
@@ -21,9 +23,8 @@ public:
     Optimizer &m_optimizer; // I put & here bc not allowed to instanciate an abstract class. Bad practice??
     // See more: https://stackoverflow.com/questions/12387239/reference-member-variables-as-class-members
     Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-            NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename);
-    Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
-            NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename, int seed);
+            NeuralQuantumState &nqs, Optimizer &optimizer,
+            std::string filename, std::string blockFilename, int seed);
     void runOptimizationSampling();
     virtual void samplePositions(int &accepted) = 0;
 };

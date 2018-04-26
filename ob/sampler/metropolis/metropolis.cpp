@@ -1,18 +1,9 @@
 #include "metropolis.h"
 
 Metropolis::Metropolis(int nSamples, int nCycles, double step, Hamiltonian &hamiltonian,
-                       NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename) :
-    Sampler(nSamples, nCycles, hamiltonian, nqs, optimizer, filename) {
-    m_psi = m_nqs.computePsi(); // Set the Psi variable to correspond to the initial positions
-    m_accepted = 0.0;
-    m_step = step;
-    m_distributionStep = std::uniform_real_distribution<double>(-0.5, 0.5);
-    m_distributionTest = std::uniform_real_distribution<double>(0.0, 1.0);
-}
-
-Metropolis::Metropolis(int nSamples, int nCycles, double step, Hamiltonian &hamiltonian,
-                       NeuralQuantumState &nqs, Optimizer &optimizer, std::string filename, int seed) :
-    Sampler(nSamples, nCycles, hamiltonian, nqs, optimizer, filename, seed) {
+                       NeuralQuantumState &nqs, Optimizer &optimizer,
+                       std::string filename, std::string blockFilename, int seed) :
+    Sampler(nSamples, nCycles, hamiltonian, nqs, optimizer, filename, blockFilename, seed) {
     m_psi = m_nqs.computePsi(); // Set the Psi variable to correspond to the initial positions
     m_accepted = 0.0;
     m_step = step;
