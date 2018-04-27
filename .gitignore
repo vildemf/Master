@@ -10,7 +10,7 @@ Build-*
 
 # Old files
 ./main.cpp
-./tryHOrbm_Metropolis/
+tryHOrbm_Metropolis
 
 # C++
 *.o

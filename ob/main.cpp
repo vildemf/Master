@@ -14,14 +14,14 @@ int main() {
     int nh = 2;                          // Number of hidden units.
     int dim = 2;                         // Number of spatial dimensions
     double sigma = 1.0;                  // Normal distribution visibles
-    bool gaussianInitialization = false; // Weights & biases (a,b,w) initialized uniformly or gaussian
+    bool gaussianInitialization = true; // Weights & biases (a,b,w) initialized uniformly or gaussian
 
     // Sampler parameters
     int nCycles = 300;                   // Number of optimization iterations
-    int nSamples = pow(2, 13);           // Number of samples in each iteration
+    int nSamples = 10000;           // Number of samples in each iteration
     random_device rd;                    // Seed
     // Metropolis
-    double step = 2.5;
+    double step = 0.5;
 
     // Hamiltonian parameters
     double omega = 1.0;
@@ -31,6 +31,7 @@ int main() {
     int nPar = nx + nh + nx*nh;
     // SGD parameters
     double eta = 0.01;                   // must be >0. SGD learning rate (lr)
+    /*
     // ASGD parameters. lr: gamma_i=a/(A+t_i) where t[i]=max(0, t[i-1]+f(-grad[i]*grad[i-1]))
     double a = 0.01;                     // must be >0. Proportional to the lr
     double A = 20.0;                     // must be >= 1. Inverse prop to the lr. (a/A) defines the max lr.
@@ -41,8 +42,7 @@ int main() {
     // ASGD optional: initial conditions
     double t0;                           // Suggested choices are t0=t1=A=20 (default)
     double t1;                           // or t0=t1=0
-
-
+    */
 
 
 

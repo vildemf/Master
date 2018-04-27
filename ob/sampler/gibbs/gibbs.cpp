@@ -9,7 +9,7 @@ Gibbs::Gibbs(int nSamples, int nCycles, Hamiltonian &hamiltonian,
 }
 
 
-void Gibbs::samplePositions(int &accepted) {
+void Gibbs::samplePositions(bool &accepted) {
     // Set new hidden variables given positions, according to the logistic sigmoid function
     // (implemented by comparing the sigmoid probability to a uniform random variable)
     double z;

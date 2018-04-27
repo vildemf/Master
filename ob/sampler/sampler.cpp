@@ -36,7 +36,8 @@ void Sampler::runOptimizationSampling() {
     double Eloc;
     double Eloc2;
     double effectiveSamplings;
-    int accepted;
+    bool accepted;
+    int acceptcount;
 
     // Optimization iterations
     for (int cycles=0; cycles<m_nCycles; cycles++) {
@@ -60,6 +61,7 @@ void Sampler::runOptimizationSampling() {
                 effectiveSamplings++;
                 derPsi += derPsi_temp;
                 EderPsi += Eloc_temp*derPsi_temp;
+                if (accepted) acceptcount++;
 
                 // Write the energies for blocking - interested in the final optimization cycle only
                 if (cycles==m_nCycles-1) {
@@ -76,7 +78,7 @@ void Sampler::runOptimizationSampling() {
 
         // Other quantities of interest
         variance = Eloc2 - Eloc*Eloc;
-        acceptedRatio = accepted/(double)effectiveSamplings;
+        acceptedRatio = acceptcount/(double)effectiveSamplings;
 
         // Compute gradient
         grad = 2*(EderPsi - Eloc*derPsi);
@@ -86,7 +88,7 @@ void Sampler::runOptimizationSampling() {
 
         // Terminal output
         std::cout << cycles << "   " << Eloc << "   " << variance << "   " //<< a(0) << "   "
-             << acceptedRatio << //" "
+             << acceptedRatio << " " << acceptcount << " " << effectiveSamplings<< //" "
              //<< a(1) << " "
              //<< b(0) << " " << b(1) << " " << b(2) << " " << b(3) << " "
              //<< w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " "

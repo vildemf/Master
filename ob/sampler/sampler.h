@@ -26,7 +26,7 @@ public:
             NeuralQuantumState &nqs, Optimizer &optimizer,
             std::string filename, std::string blockFilename, int seed);
     void runOptimizationSampling();
-    virtual void samplePositions(int &accepted) = 0;
+    virtual void samplePositions(bool &accepted) = 0;
 };
 
 #endif // SAMPLER_H
