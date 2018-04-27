@@ -44,7 +44,7 @@ void Sampler::runOptimizationSampling() {
         Eloc = 0;
         Eloc2 = 0;
         effectiveSamplings = 0;
-        accepted = 0;
+        acceptcount = 0;
         derPsi.setZero();
         EderPsi.setZero();
 

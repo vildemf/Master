@@ -17,11 +17,11 @@ int main() {
     bool gaussianInitialization = true; // Weights & biases (a,b,w) initialized uniformly or gaussian
 
     // Sampler parameters
-    int nCycles = 300;                   // Number of optimization iterations
-    int nSamples = 10000;           // Number of samples in each iteration
+    int nCycles = 100;                   // Number of optimization iterations
+    int nSamples = 100000;           // Number of samples in each iteration
     random_device rd;                    // Seed
     // Metropolis
-    double step = 0.5;
+    double step = 0.45;
 
     // Hamiltonian parameters
     double omega = 1.0;
