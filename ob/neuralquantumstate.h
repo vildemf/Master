@@ -32,6 +32,8 @@ public:
     NeuralQuantumState(int nh, int nx, int dim, double sigma, bool gaussianInitialization, int seed);
     double computePsi();
     double computePsi(Eigen::VectorXd x); // Needed for Sampler Metropolis method
+    double quantumForce(int updateCoordinate);
+    double quantumForce(int updateCoordinate, Eigen::VectorXd xTrial);
 };
 
 #endif // NEURALQUANTUMSTATE_H

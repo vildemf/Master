@@ -89,3 +89,26 @@ double NeuralQuantumState::computePsi(Eigen::VectorXd x) {
     m_psiFactor1 = exp(-m_psiFactor1/(2.0*m_sig2));
     return m_psiFactor1*m_psiFactor2;
 }
+
+double NeuralQuantumState::quantumForce(int updateCoordinate) {
+    // Calculates the quantum force for the given coordinate for the current state
+    Eigen::VectorXd Q = m_b + (1.0/m_sig2)*(m_x.transpose()*m_w).transpose();
+    double sum1 = 0;
+    for (int j=0; j<m_nh; j++) {
+        sum1 += m_w(updateCoordinate,j)/(1.0+exp(-Q(j)));
+    }
+    double Fcurrent = 2*(-(m_x(updateCoordinate) - m_a(updateCoordinate))/m_sig2 + sum1/m_sig2);
+    return Fcurrent;
+
+}
+
+double NeuralQuantumState::quantumForce(int updateCoordinate, Eigen::VectorXd xTrial) {
+    // Calculates the quantum force for the given coordinate for the trial state
+    Eigen::VectorXd Q = m_b + (1.0/m_sig2)*(xTrial.transpose()*m_w).transpose();
+    double sum1 = 0;
+    for (int j=0; j<m_nh; j++) {
+        sum1 += m_w(updateCoordinate,j)/(1.0+exp(-Q(j)));
+    }
+    double Ftrial = 2*(-(xTrial(updateCoordinate) - m_a(updateCoordinate))/m_sig2 + sum1/m_sig2);
+    return Ftrial;
+}
