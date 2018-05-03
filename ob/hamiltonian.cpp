@@ -20,6 +20,8 @@ double Hamiltonian::computeLocalEnergy(NeuralQuantumState &nqs) {
         }
         double der1lnPsi = -(nqs.m_x(r) - nqs.m_a(r))/nqs.m_sig2 + sum1/nqs.m_sig2;
         double der2lnPsi = -1.0/nqs.m_sig2 + sum2/(nqs.m_sig2*nqs.m_sig2);
+        //der1lnPsi = 0.5*der1lnPsi;
+        //der2lnPsi = 0.5*der2lnPsi;
         // The last term is the Harmonic Oscillator potential
         ElocTemp += -der1lnPsi*der1lnPsi - der2lnPsi + m_omega*m_omega*nqs.m_x(r)*nqs.m_x(r);
 

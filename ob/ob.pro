@@ -9,9 +9,10 @@ SOURCES += main.cpp \
     sampler/sampler.cpp \
     optimizer/optimizer.cpp \
     sampler/gibbs/gibbs.cpp \
-    sampler/metropolis/metropolis.cpp \
+    sampler/metropolisbruteforce/metropolisbruteforce.cpp \
+    sampler/metropolisimportancesampling/metropolisimportancesampling.cpp \
     optimizer/sgd/sgd.cpp \
-    optimizer/asgd/asgd.cpp
+    optimizer/asgd/asgd.cpp \
 
 HEADERS += \
     neuralquantumstate.h \
@@ -19,8 +20,9 @@ HEADERS += \
     sampler/sampler.h \
     optimizer/optimizer.h \
     sampler/gibbs/gibbs.h \
-    sampler/metropolis/metropolis.h \
+    sampler/metropolisbruteforce/metropolisbruteforce.h \
+    sampler/metropolisimportancesampling/metropolisimportancesampling.h \
     optimizer/sgd/sgd.h \
-    optimizer/asgd/asgd.h
+    optimizer/asgd/asgd.h \
 
 INCLUDEPATH += /usr/local/include/eigen3/

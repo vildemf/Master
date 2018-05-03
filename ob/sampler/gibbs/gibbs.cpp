@@ -1,4 +1,5 @@
 #include "gibbs.h"
+#include <iostream>
 
 Gibbs::Gibbs(int nSamples, int nCycles, Hamiltonian &hamiltonian,
              NeuralQuantumState &nqs, Optimizer &optimizer,

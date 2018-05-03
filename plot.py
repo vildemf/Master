@@ -1,7 +1,7 @@
 from numpy import *
 from matplotlib.pyplot import *
 
-filename = 'RBMoutput.txt'
+filename = 'goodInteraction.txt'
 
 f = open(filename, 'r')
 Eloc = []

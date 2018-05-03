@@ -36,7 +36,7 @@ void Sampler::runOptimizationSampling() {
     double Eloc;
     double Eloc2;
     double effectiveSamplings;
-    bool accepted;
+    bool accepted = false;
     int acceptcount;
 
     // Optimization iterations
@@ -80,6 +80,29 @@ void Sampler::runOptimizationSampling() {
         variance = Eloc2 - Eloc*Eloc;
         acceptedRatio = acceptcount/(double)effectiveSamplings;
 
+        // Write parameters of last cycle to file
+        if (cycles==m_nCycles-1) {
+            std::ofstream paramfile;
+            paramfile.open("/Users/Vilde/Documents/masters/NQS_paper/tryHOrbm/Theory/parameters.txt");
+
+            for (int i=0; i<m_nqs.m_nx; i++) {
+                paramfile << m_nqs.m_a(i) << " ";
+            }
+            paramfile << '\n';
+            for (int j=0; j<m_nqs.m_nh; j++) {
+                paramfile << m_nqs.m_b(j) << " ";
+            }
+            paramfile << '\n';
+            int k = m_nqs.m_nx + m_nqs.m_nh;
+            for (int i=0; i<m_nqs.m_nx; i++) {
+                for (int j=0; j<m_nqs.m_nh; j++) {
+                    paramfile << m_nqs.m_w(i,j) << " ";
+                    k++;
+                }
+            }
+            paramfile.close();
+        }
+
         // Compute gradient
         grad = 2*(EderPsi - Eloc*derPsi);
 
@@ -88,7 +111,7 @@ void Sampler::runOptimizationSampling() {
 
         // Terminal output
         std::cout << cycles << "   " << Eloc << "   " << variance << "   " //<< a(0) << "   "
-             << acceptedRatio << " " << acceptcount << " " << effectiveSamplings<< //" "
+             << acceptedRatio << //"  " << effectiveSamplings << " " << acceptcount <<
              //<< a(1) << " "
              //<< b(0) << " " << b(1) << " " << b(2) << " " << b(3) << " "
              //<< w(0,0) << " " << w(0,1) << " " << w(0,2) << " " << w(0,3) << " "
@@ -98,6 +121,11 @@ void Sampler::runOptimizationSampling() {
         // File output
         m_outfile << cycles << "   " << Eloc << "   " << variance << "   "
                 << acceptedRatio << "\n";
+
+
+
+
+
     }
     m_outfile.close();
 }
