@@ -11,6 +11,7 @@ class Sampler {
 protected:
     int m_nSamples;
     int m_nCycles;
+    double m_gibbsfactor; // Set to 0.5 when Gibbs sampling to account for squareroot. Else 1.
     std::ofstream m_outfile;
     std::ofstream m_blockOutfile;
     std::string m_blockFilename;

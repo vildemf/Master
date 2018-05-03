@@ -10,8 +10,8 @@ private:
 
 public:
     Hamiltonian(double omega, bool includeInteraction);
-    double computeLocalEnergy(NeuralQuantumState &nqs);
-    Eigen::VectorXd computeLocalEnergyGradientComponent(NeuralQuantumState &nqs);
+    double computeLocalEnergy(NeuralQuantumState &nqs, double gibbsfactor);
+    Eigen::VectorXd computeLocalEnergyGradientComponent(NeuralQuantumState &nqs, double gibbsfactor);
     double interaction(Eigen::VectorXd x, int nx, int dim);
 };
 

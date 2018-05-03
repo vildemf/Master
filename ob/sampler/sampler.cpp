@@ -5,11 +5,12 @@ Sampler::Sampler(int nSamples, int nCycles, Hamiltonian &hamiltonian,
                  NeuralQuantumState &nqs, Optimizer &optimizer,
                  std::string filename, std::string blockFilename, int seed) :
     m_hamiltonian(hamiltonian), m_nqs(nqs), m_optimizer(optimizer) {
+
     m_nSamples = nSamples;
     m_nCycles = nCycles;
+    m_gibbsfactor = 1.0;      // Changed to 0.5 if called in the Gibbs subclass constructor.
     m_outfile.open(filename);
     m_blockOutfile.open(blockFilename);
-
     m_randomEngine = std::mt19937_64(seed);
 }
 
@@ -52,8 +53,8 @@ void Sampler::runOptimizationSampling() {
         for (int samples=0; samples<m_nSamples; samples++) {
             samplePositions(accepted);
             if (samples > 0.1*m_nSamples) {
-                Eloc_temp = m_hamiltonian.computeLocalEnergy(m_nqs);
-                derPsi_temp = m_hamiltonian.computeLocalEnergyGradientComponent(m_nqs);
+                Eloc_temp = m_hamiltonian.computeLocalEnergy(m_nqs, m_gibbsfactor);
+                derPsi_temp = m_hamiltonian.computeLocalEnergyGradientComponent(m_nqs, m_gibbsfactor);
 
                 // Add up values for expectation values
                 Eloc += Eloc_temp;

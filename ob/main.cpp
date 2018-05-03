@@ -42,12 +42,14 @@ int main() {
     double a = 0.01;                     // must be >0. Proportional to the lr
     double A = 20.0;                     // must be >= 1. Inverse prop to the lr. (a/A) defines the max lr.
     // ASGD optional: parameters to the function f
-    double asgdOmega;                    // must be >0. As omega->0, f-> step function.
-    double fmax;                         // must be >0
-    double fmin;                         // must be <0
+    double asgdOmega = 1.;                    // must be >0. As omega->0, f-> step function.
+    double fmax = 2.;                         // must be >0
+    double fmin = -0.5;                         // must be <0
     // ASGD optional: initial conditions
-    double t0;                           // Suggested choices are t0=t1=A=20 (default)
-    double t1;                           // or t0=t1=0
+    double t0 = A;                           // Suggested choices are t0=t1=A=20 (default)
+    double t1 = A;                           // or t0=t1=0
+
+
 
 
 

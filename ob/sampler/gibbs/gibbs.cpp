@@ -6,6 +6,7 @@ Gibbs::Gibbs(int nSamples, int nCycles, Hamiltonian &hamiltonian,
              std::string filename,  std::string blockFilename, int seed) :
     Sampler(nSamples, nCycles, hamiltonian, nqs, optimizer, filename, blockFilename, seed) {
 
+    m_gibbsfactor = 0.5;
     m_distributionH = std::uniform_real_distribution<double>(0,1);
 }
 
