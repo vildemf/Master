@@ -49,13 +49,18 @@ void Sampler::runOptimizationSampling() {
         derPsi.setZero();
         EderPsi.setZero();
 
+        // Compute Psi and relevant components according to the new weights and biases
+        Eigen::VectorXd Q = m_nqs.m_b + (1.0/m_nqs.m_sig2)*(m_nqs.m_x.transpose()*m_nqs.m_w).transpose();
+        m_nqs.m_psi = m_nqs.computePsi(m_nqs.m_x, Q);
+        m_nqs.updatePsiComponents(Q);
+
         // Samples
         for (int samples=0; samples<m_nSamples; samples++) {
             samplePositions(accepted);
             if (samples > 0.1*m_nSamples) {
                 Eloc_temp = m_hamiltonian.computeLocalEnergy(m_nqs, m_gibbsfactor);
                 derPsi_temp = m_hamiltonian.computeLocalEnergyGradientComponent(m_nqs, m_gibbsfactor);
-
+                //std::cout << Eloc_temp << std::endl;
                 // Add up values for expectation values
                 Eloc += Eloc_temp;
                 Eloc2 += Eloc_temp*Eloc_temp;
@@ -81,6 +86,7 @@ void Sampler::runOptimizationSampling() {
         variance = Eloc2 - Eloc*Eloc;
         acceptedRatio = acceptcount/(double)effectiveSamplings;
 
+        /*
         // Write parameters of last cycle to file
         if (cycles==m_nCycles-1) {
             std::ofstream paramfile;
@@ -103,6 +109,7 @@ void Sampler::runOptimizationSampling() {
             }
             paramfile.close();
         }
+        */
 
         // Compute gradient
         grad = 2*(EderPsi - Eloc*derPsi);

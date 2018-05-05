@@ -16,8 +16,8 @@ void Gibbs::samplePositions(bool &accepted) {
     // (implemented by comparing the sigmoid probability to a uniform random variable)
     double z;
     for (int j=0; j<m_nqs.m_nh; j++) {
-        z = m_nqs.m_b(j) + m_nqs.m_x.dot(m_nqs.m_w.col(j))/m_nqs.m_sig2;
-        m_nqs.m_h(j) = m_distributionH(m_randomEngine) < logisticSigmoid(z);
+        //z = m_nqs.m_b(j) + m_nqs.m_x.dot(m_nqs.m_w.col(j))/m_nqs.m_sig2;
+        m_nqs.m_h(j) = m_distributionH(m_randomEngine) < m_nqs.m_sigmoidQ(j); //logisticSigmoid(z);
     }
 
     // Set new positions (visibles) given hidden, according to normal distribution
@@ -28,8 +28,11 @@ void Gibbs::samplePositions(bool &accepted) {
         distributionX = std::normal_distribution<double>(xMean, m_nqs.m_sig);
         m_nqs.m_x(i) = distributionX(m_randomEngine);
     }
+    m_nqs.updatePsiComponents();
 }
 
+/*
 double Gibbs::logisticSigmoid(double z) {
     return 1.0/(1+exp(-z));
 }
+*/

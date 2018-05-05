@@ -8,16 +8,21 @@ Hamiltonian::Hamiltonian(double omega, bool includeInteraction) {
 
 
 double Hamiltonian::computeLocalEnergy(NeuralQuantumState &nqs, double gibbsfactor) {
-    Eigen::VectorXd Q = nqs.m_b + (1.0/nqs.m_sig2)*(nqs.m_x.transpose()*nqs.m_w).transpose();
-    double ElocTemp = 0;
+    //Eigen::VectorXd Q = nqs.m_b + (1.0/nqs.m_sig2)*(nqs.m_x.transpose()*nqs.m_w).transpose();
+    double ElocTemp = 0.;
     // Loop over the visibles (n_particles*n_coordinates) for the Laplacian
     for (int r=0; r<nqs.m_nx; r++) {
+
         double sum1 = 0;
         double sum2 = 0;
+
         for (int j=0; j<nqs.m_nh; j++) {
-            sum1 += nqs.m_w(r,j)/(1.0+exp(-Q(j)));
-            sum2 += nqs.m_w(r,j)*nqs.m_w(r,j)*exp(Q(j))/((exp(Q(j))+1.0)*(exp(Q(j))+1.0));
+            //sum1 += nqs.m_w(r,j)*nqs.m_sigmoidQ(j);  ///(1.0+exp(-Q(j)));
+            sum2 += nqs.m_w(r,j)*nqs.m_w(r,j)*nqs.m_derSigmoidQ(j);
         }
+        sum1 = nqs.m_w.row(r).dot(nqs.m_sigmoidQ);
+        //sum2 = (nqs.m_derSigmoidQ * nqs.m_w.row(r) * nqs.m_w.row(r)).sum();
+
         double der1lnPsi = -(nqs.m_x(r) - nqs.m_a(r))/nqs.m_sig2 + sum1/nqs.m_sig2;
         double der2lnPsi = -1.0/nqs.m_sig2 + sum2/(nqs.m_sig2*nqs.m_sig2);
         der1lnPsi *= gibbsfactor;
@@ -40,24 +45,26 @@ double Hamiltonian::computeLocalEnergy(NeuralQuantumState &nqs, double gibbsfact
 Eigen::VectorXd Hamiltonian::computeLocalEnergyGradientComponent(NeuralQuantumState &nqs, double gibbsfactor) {
 
     // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
-    Eigen::VectorXd Q = nqs.m_b + (1.0/nqs.m_sig2)*(nqs.m_x.transpose()*nqs.m_w).transpose();
+    //Eigen::VectorXd Q = nqs.m_b + (1.0/nqs.m_sig2)*(nqs.m_x.transpose()*nqs.m_w).transpose();
     Eigen::VectorXd derPsiTemp;
     derPsiTemp.resize(nqs.m_nx + nqs.m_nh + nqs.m_nx*nqs.m_nh);
 
     for (int k=0; k<nqs.m_nx; k++) {
-        derPsiTemp(k) = gibbsfactor*(nqs.m_x(k) - nqs.m_a(k))/nqs.m_sig2;
+        derPsiTemp(k) = (nqs.m_x(k) - nqs.m_a(k))/nqs.m_sig2;
     }
+
     for (int k=nqs.m_nx; k<(nqs.m_nx+nqs.m_nh); k++) {
-        derPsiTemp(k) = gibbsfactor*1.0/(1.0+exp(-Q(k-nqs.m_nx)));
+        //derPsiTemp(k) = 1.0/(1.0+exp(-Q(k-nqs.m_nx)));
+        derPsiTemp(k) = nqs.m_sigmoidQ(k-nqs.m_nx);
     }
     int k=nqs.m_nx + nqs.m_nh;
     for (int i=0; i<nqs.m_nx; i++) {
         for (int j=0; j<nqs.m_nh; j++) {
-            derPsiTemp(k) = gibbsfactor*nqs.m_x(i)/(nqs.m_sig2*(1.0+exp(-Q(j))));
+            derPsiTemp(k) = nqs.m_x(i)*nqs.m_sigmoidQ(j)/nqs.m_sig2; // /(nqs.m_sig2*(1.0+exp(-Q(j))));
             k++;
         }
     }
-    return derPsiTemp;
+    return gibbsfactor*derPsiTemp;
 }
 
 double Hamiltonian::interaction(Eigen::VectorXd x, int nx, int dim) {

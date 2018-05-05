@@ -2,6 +2,7 @@
 #include "sampler/metropolisimportancesampling/metropolisimportancesampling.h"
 #include "sampler/metropolisbruteforce/metropolisbruteforce.h"
 #include "sampler/gibbs/gibbs.h"
+#include <time.h>
 
 using namespace std;
 
@@ -20,15 +21,15 @@ int main() {
 
     // Sampler parameters
     string samplemethod = "importance";   // Choose between "importance", "bruteforce" and "gibbs"
-    int nCycles = 1000;                   // Number of optimization iterations
-    int nSamples = 10000;           // Number of samples in each iteration
+    int nCycles = 200;                   // Number of optimization iterations
+    int nSamples = 1e5;           // Number of samples in each iteration
     random_device rd;                    // Seed
     // Metropolis
     double step = 0.45;
-
+    //double step = 2.5;
     // Hamiltonian parameters
-    double omega = 1.0;
-    bool includeInteraction = false;      // Include interaction or not
+    double omega =1.0;
+    bool includeInteraction = true;      // Include interaction or not
 
 
 
@@ -36,7 +37,7 @@ int main() {
     int nPar = nVisible + nHidden + nVisible*nHidden;
     string optimization = "sgd";        // choose between "sgd", "asgd" and "asgdWithOptionals"
     // SGD parameters
-    double eta = 0.2;                   // must be >0. SGD learning rate (lr)
+    double eta = 0.02;                   // must be >0. SGD learning rate (lr)
 
     // ASGD parameters. lr: gamma_i=a/(A+t_i) where t[i]=max(0, t[i-1]+f(-grad[i]*grad[i-1]))
     double a = 0.01;                     // must be >0. Proportional to the lr
@@ -55,10 +56,11 @@ int main() {
 
 
     // Starting the run based on user options
-
+    time_t start, finish;
+    time(&start);
     // Create objects for the sampler:
     Hamiltonian hamiltonian(omega, includeInteraction);
-    NeuralQuantumState nqs(nHidden, nVisible, nDim, sigma, gaussianInitialization);
+    NeuralQuantumState nqs(nHidden, nVisible, nDim, sigma, gaussianInitialization, rd());
 
     Sgd optimizer(eta, nPar);
     if (optimization=="sgd") {
@@ -87,6 +89,9 @@ int main() {
         cout << "Error: Please choose one of the specified samplers.";
     }
 
+    time(&finish);
+
+    cout << "Time: " << difftime(finish, start) << endl;
 
 
     return 0;

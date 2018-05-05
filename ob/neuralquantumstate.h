@@ -6,11 +6,7 @@
 
 class NeuralQuantumState {
 private:
-    double m_psiFactor1;
-    double m_psiFactor2;
-    Eigen::VectorXd m_Q;
     std::mt19937_64 m_randomEngine; // For the distributions
-
 
     void setup(int nh, int nx, int dim, double sigma, bool gaussianInitialization);
     void setupWeights();
@@ -28,12 +24,21 @@ public:
     Eigen::VectorXd m_b;
     Eigen::MatrixXd m_w;
 
-    NeuralQuantumState(int nh, int nx, int dim, double sigma, bool gaussianInitialization);
+    // Quantities to store for computational efficiency
+    double m_psi;
+    Eigen::VectorXd m_sigmoidQ;
+    Eigen::VectorXd m_derSigmoidQ;
+
     NeuralQuantumState(int nh, int nx, int dim, double sigma, bool gaussianInitialization, int seed);
-    double computePsi();
-    double computePsi(Eigen::VectorXd x); // Needed for Sampler Metropolis method
+
+    double computePsi(Eigen::VectorXd x, Eigen::VectorXd Q); // Needed for Sampler Metropolis method
+
     double quantumForce(int updateCoordinate);
-    double quantumForce(int updateCoordinate, Eigen::VectorXd xTrial);
+    double quantumForce(int updateCoordinate, Eigen::VectorXd xTrial, Eigen::VectorXd Q, Eigen::VectorXd &sigmoidQ);
+
+    void updatePsiComponents();
+    void updatePsiComponents(Eigen::VectorXd Q);
+    void updatePsiComponents(Eigen::VectorXd Q, Eigen::VectorXd sigmoidQ);
 };
 
 #endif // NEURALQUANTUMSTATE_H

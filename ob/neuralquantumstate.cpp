@@ -1,11 +1,6 @@
 #include "neuralquantumstate.h"
 #include <random>
 
-NeuralQuantumState::NeuralQuantumState(int nh, int nx, int dim, double sigma, bool gaussianInitialization) {
-    std::random_device rd;
-    m_randomEngine = std::mt19937_64(rd());
-    setup(nh, nx, dim, sigma, gaussianInitialization);
-}
 
 NeuralQuantumState::NeuralQuantumState(int nh, int nx, int dim, double sigma, bool gaussianInitialization, int seed) {
     m_randomEngine = std::mt19937_64(seed);
@@ -23,6 +18,10 @@ void NeuralQuantumState::setup(int nh, int nx, int dim, double sigma, bool gauss
     m_a.resize(m_nx); // visible bias
     m_b.resize(m_nh); // hidden bias
     m_w.resize(m_nx, m_nh); // weights
+
+    m_sigmoidQ.resize(m_nh);
+    m_derSigmoidQ.resize(m_nh);
+
     if (gaussianInitialization) {
         setupWeights();
     } else {
@@ -62,53 +61,82 @@ void NeuralQuantumState::setupPositions() {
     }
 }
 
-double NeuralQuantumState::computePsi() {
-    m_psiFactor1 = 0.0;
-    for (int i=0; i<m_nx; i++) {
-        m_psiFactor1 += (m_x(i) - m_a(i))*(m_x(i) - m_a(i));
-    }
-    m_psiFactor2 = 1.0;
-    m_Q = m_b + (((1.0/m_sig2)*m_x).transpose()*m_w).transpose();
+
+
+double NeuralQuantumState::computePsi(Eigen::VectorXd x, Eigen::VectorXd Q) {
+    // Used by Metropolis
+    // Computes the trial Psi - used at every sampling
+    // Computes the current Psi - only used when initializing at
+    // the beginning of a new cycle
+    double psiFactor = (x-m_a).dot(x-m_a);
+    psiFactor = exp(-psiFactor/(2.0*m_sig2));
+
+    double factorExpQ = 1.0;
     for (int j=0; j<m_nh; j++) {
-        m_psiFactor2 *= (1 + exp(m_Q(j)));
+        factorExpQ *= (1 + exp(Q(j)));
     }
-    m_psiFactor1 = exp(-m_psiFactor1/(2.0*m_sig2));
-    return m_psiFactor1*m_psiFactor2;
+    return psiFactor*factorExpQ;
 }
 
-double NeuralQuantumState::computePsi(Eigen::VectorXd x) {
-    m_psiFactor1 = 0.0;
-    for (int i=0; i<m_nx; i++) {
-        m_psiFactor1 += (x(i) - m_a(i))*(x(i) - m_a(i));
-    }
-    m_psiFactor2 = 1.0;
-    m_Q = m_b + (((1.0/m_sig2)*x).transpose()*m_w).transpose();
-    for (int j=0; j<m_nh; j++) {
-        m_psiFactor2 *= (1 + exp(m_Q(j)));
-    }
-    m_psiFactor1 = exp(-m_psiFactor1/(2.0*m_sig2));
-    return m_psiFactor1*m_psiFactor2;
-}
+
+
+
 
 double NeuralQuantumState::quantumForce(int updateCoordinate) {
-    // Calculates the quantum force for the given coordinate for the current state
-    Eigen::VectorXd Q = m_b + (1.0/m_sig2)*(m_x.transpose()*m_w).transpose();
-    double sum1 = 0;
-    for (int j=0; j<m_nh; j++) {
-        sum1 += m_w(updateCoordinate,j)/(1.0+exp(-Q(j)));
-    }
+    // Calculates the quantum force for the given coordinate for the current state   
+    double sum1 = m_sigmoidQ.dot(m_w.row(updateCoordinate));
     double Fcurrent = 2*(-(m_x(updateCoordinate) - m_a(updateCoordinate))/m_sig2 + sum1/m_sig2);
     return Fcurrent;
-
 }
 
-double NeuralQuantumState::quantumForce(int updateCoordinate, Eigen::VectorXd xTrial) {
+double NeuralQuantumState::quantumForce(int updateCoordinate, Eigen::VectorXd xTrial, Eigen::VectorXd Q, Eigen::VectorXd &sigmoidQ) {
     // Calculates the quantum force for the given coordinate for the trial state
-    Eigen::VectorXd Q = m_b + (1.0/m_sig2)*(xTrial.transpose()*m_w).transpose();
-    double sum1 = 0;
     for (int j=0; j<m_nh; j++) {
-        sum1 += m_w(updateCoordinate,j)/(1.0+exp(-Q(j)));
+        sigmoidQ(j) = 1./(1 + exp(-Q(j)));
     }
+    double sum1 = sigmoidQ.dot(m_w.row(updateCoordinate));
     double Ftrial = 2*(-(xTrial(updateCoordinate) - m_a(updateCoordinate))/m_sig2 + sum1/m_sig2);
     return Ftrial;
 }
+
+
+void NeuralQuantumState::updatePsiComponents() {
+    // To be called after position has been updated - used by Gibbs
+    Eigen::VectorXd Q = m_b + (m_x.transpose()*m_w).transpose()/m_sig2;
+    double expQj;
+    double expNegQj;
+    for (int j=0; j<m_nh; j++) {
+        expQj = exp(Q(j));
+        expNegQj = exp(-Q(j));
+        m_sigmoidQ(j) = 1./(1 + expNegQj);
+        m_derSigmoidQ(j) = expQj/((1+expQj)*(1+expQj));
+    }
+}
+
+void NeuralQuantumState::updatePsiComponents(Eigen::VectorXd Q) {
+    // To be called after position has been updated - used by Metropolis Brute Force
+    double expQj;
+    double expNegQj;
+    for (int j=0; j<m_nh; j++) {
+        expQj = exp(Q(j));
+        expNegQj = exp(-Q(j));
+        m_sigmoidQ(j) = 1./(1 + expNegQj);
+        m_derSigmoidQ(j) = expQj/((1+expQj)*(1+expQj));
+    }
+}
+
+void NeuralQuantumState::updatePsiComponents(Eigen::VectorXd Q, Eigen::VectorXd sigmoidQ) {
+    // To be called after position has been updated - used by Metropolis Importance Sampling,
+    // which have
+    // already computed some quantities for trial expressions.
+    m_sigmoidQ = sigmoidQ;
+
+    double expQj;
+    for (int j=0; j<m_nh; j++) {
+        expQj = exp(Q(j));
+        m_derSigmoidQ(j) = expQj/((1+expQj)*(1+expQj));
+    }
+}
+
+
+
