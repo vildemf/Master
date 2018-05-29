@@ -9,7 +9,7 @@ MetropolisImportanceSampling::MetropolisImportanceSampling(int nSamples, int nCy
     m_step = step;
     m_distributionStep = std::uniform_real_distribution<double>(-0.5, 0.5);
     m_distributionTest = std::uniform_real_distribution<double>(0.0, 1.0);
-    m_distributionImportance = std::normal_distribution<double>(0.0, 1.0);
+    m_distributionImportance = std::normal_distribution<double>(0.0, 1.0); // Variance should be 2*D=1
 
 }
 
@@ -44,8 +44,8 @@ void MetropolisImportanceSampling::samplePositions(bool &accepted) {
     Ftrial = m_nqs.quantumForce(updateCoordinate, xTrial, QTrial, sigmoidQTrial);
 
     //Greens ratio
-    double part1 = xCurrent - xTrial(updateCoordinate) - m_step*Ftrial;
-    double part2 = xTrial(updateCoordinate) - xCurrent - m_step*Fcurrent;
+    double part1 = xCurrent - xTrial(updateCoordinate) - m_step*D*Ftrial;
+    double part2 = xTrial(updateCoordinate) - xCurrent - m_step*D*Fcurrent;
     double Gratio = exp(-(part1*part1 - part2*part2)/(4*D*m_step));
 
     // Psi

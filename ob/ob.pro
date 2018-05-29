@@ -13,6 +13,7 @@ SOURCES += main.cpp \
     sampler/metropolisimportancesampling/metropolisimportancesampling.cpp \
     optimizer/sgd/sgd.cpp \
     optimizer/asgd/asgd.cpp \
+    sampler/metropolis.cpp
 
 HEADERS += \
     neuralquantumstate.h \
@@ -24,5 +25,6 @@ HEADERS += \
     sampler/metropolisimportancesampling/metropolisimportancesampling.h \
     optimizer/sgd/sgd.h \
     optimizer/asgd/asgd.h \
+    sampler/metropolis.h
 
 INCLUDEPATH += /usr/local/include/eigen3/

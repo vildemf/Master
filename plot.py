@@ -1,19 +1,25 @@
 from numpy import *
 from matplotlib.pyplot import *
 
-filename = 'goodInteraction.txt'
+filename = 'trainingvaluesADAM6hidden500epochs.txt'
 
 f = open(filename, 'r')
 Eloc = []
 variance = []
+gradientnorm = []
 
 for line in f:
 	line = line.split()
-	Eloc.append(line[1])
-	variance.append(line[2])
+	Eloc.append(float(line[0]))
+	variance.append(float(line[1]))
+	gradientnorm.append(float(line[1]))
+
+
 
 
 Eloc = array(Eloc)
+av = Eloc[330:]
+print sum(av)/av.size
 
 plot(Eloc)
 xlabel('Optimization iteration')

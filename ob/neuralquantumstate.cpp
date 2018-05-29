@@ -80,8 +80,6 @@ double NeuralQuantumState::computePsi(Eigen::VectorXd x, Eigen::VectorXd Q) {
 
 
 
-
-
 double NeuralQuantumState::quantumForce(int updateCoordinate) {
     // Calculates the quantum force for the given coordinate for the current state   
     double sum1 = m_sigmoidQ.dot(m_w.row(updateCoordinate));
@@ -137,6 +135,8 @@ void NeuralQuantumState::updatePsiComponents(Eigen::VectorXd Q, Eigen::VectorXd 
         m_derSigmoidQ(j) = expQj/((1+expQj)*(1+expQj));
     }
 }
+
+
 
 
 

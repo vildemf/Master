@@ -17,27 +17,25 @@ int main() {
     int nDim = 2;                         // Number of spatial dimensions
     int nVisible = nParticles*nDim;
     double sigma = 1.0;                   // Normal distribution visibles
-    bool gaussianInitialization = true;   // Weights & biases (a,b,w) initialized uniformly or gaussian
+    bool gaussianInitialization = false;   // Weights & biases (a,b,w) initialized uniformly or gaussian
 
     // Sampler parameters
     string samplemethod = "importance";   // Choose between "importance", "bruteforce" and "gibbs"
     int nCycles = 200;                   // Number of optimization iterations
-    int nSamples = 1e5;           // Number of samples in each iteration
+    int nSamples = 1e4;           // Number of samples in each iteration
     random_device rd;                    // Seed
     // Metropolis
-    double step = 0.45;
+    double step = 0.5;
     //double step = 2.5;
     // Hamiltonian parameters
     double omega =1.0;
-    bool includeInteraction = true;      // Include interaction or not
-
-
+    bool includeInteraction = false;      // Include interaction or not
 
     // Optimizer parameters (choose either stochastic gradient descent (SGD) or adaptive SGD (ASGD))
     int nPar = nVisible + nHidden + nVisible*nHidden;
     string optimization = "sgd";        // choose between "sgd", "asgd" and "asgdWithOptionals"
     // SGD parameters
-    double eta = 0.02;                   // must be >0. SGD learning rate (lr)
+    double eta = 0.05;                   // must be >0. SGD learning rate (lr)
 
     // ASGD parameters. lr: gamma_i=a/(A+t_i) where t[i]=max(0, t[i-1]+f(-grad[i]*grad[i-1]))
     double a = 0.01;                     // must be >0. Proportional to the lr
