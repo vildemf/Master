@@ -11,14 +11,7 @@ Trainer::Trainer(int numberOfIterations, double learningrate, string minimizerty
     m_writeIterativeExpectations = false;
 
     initializeMinimizer(learningrate, minimizertype);
-    //m_minimizer(new GradientDescentSimple(learningrate));
-    //m_minimizer = &minimizer;
-    // BUT: does this object only exist within this constructor? and undefined outside?
-    //m_minimizer = &GradientDescentSimple(learningrate);
 
-    //if (minimizertype=='gradientdescentsimple') {
-    //    m_minimizer = GradientDescentSimple(learningrate);
-    //}
 }
 
 
