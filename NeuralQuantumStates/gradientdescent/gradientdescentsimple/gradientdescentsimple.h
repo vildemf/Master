@@ -10,10 +10,13 @@ private:
     Eigen::VectorXd m_prevShift;
 
 public:
-    GradientDescentSimple(double learningrate);
+    GradientDescentSimple(double learningrate, double gamma);
 
-    Eigen::VectorXd computeParameterShift(Eigen::VectorXd gradient, int nparameters, int iteration);
+    Eigen::VectorXd computeParameterShift(const Eigen::VectorXd &gradient, int nparameters, int iteration);
     void            setUp(int nparameters);
+
+
+
 };
 
 #endif // GRADIENTDESCENTSIMPLE_H

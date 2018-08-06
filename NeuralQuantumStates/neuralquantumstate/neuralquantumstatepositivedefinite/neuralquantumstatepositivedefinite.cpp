@@ -6,10 +6,9 @@ using Eigen::VectorXd;
 using std::normal_distribution;
 using std::string;
 
-NeuralQuantumStatePositiveDefinite::NeuralQuantumStatePositiveDefinite(int nparticles, int nh, int ndim,
+NeuralQuantumStatePositiveDefinite::NeuralQuantumStatePositiveDefinite(double sigma, int nparticles, int nh, int ndim,
                                                                        string initialization, int seed) :
-    NeuralQuantumState(nparticles, nh, ndim, initialization, seed) {
-
+    NeuralQuantumState(sigma, nparticles, nh, ndim, initialization, seed) {
     m_positiveDefiniteFactor = 0.5;
     m_h                      .resize(m_nh);
 }
@@ -25,7 +24,7 @@ normal_distribution<double> NeuralQuantumStatePositiveDefinite::probXiGivenH(int
     return normal_distribution<double>(xMean, m_sig);
 }
 
-double NeuralQuantumStatePositiveDefinite::computePsi(VectorXd x, VectorXd Q) {
+double NeuralQuantumStatePositiveDefinite::computePsi(const VectorXd &x, const VectorXd &Q) {
     return sqrt(this->NeuralQuantumState::computePsi(x, Q));
 }
 

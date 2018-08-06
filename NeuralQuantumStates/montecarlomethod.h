@@ -11,6 +11,8 @@ private:
     std::fstream                  m_energiesblockingfile;
     bool                          m_writeEnergiesForBlocking;
     std::string                   m_energiesblockingfilename;
+    bool                          m_sampleOneBodyDensities;
+    std:: string                  m_onebodydensitiesfilename;
 
 public:
     MonteCarloMethod(int numberOfSamples, std::shared_ptr<QuantumModel> model, int seed);
@@ -19,6 +21,7 @@ public:
 
     void runMonteCarlo();
     void setWriteEnergiesForBlocking(std::string filename);
+    void setWriteOneBodyDensities(std::string filename);
 
 };
 

@@ -4,7 +4,7 @@
 
 #include "sampler/gibbs/gibbs.h"
 #include "sampler/metropolis/metropolisbruteforce/metropolisbruteforce.h"
-#include "sampler/metropolis/metropolishastings/metropolishastings.h"
+#include "sampler/metropolis/metropolisimportancesampling/metropolisimportancesampling.h"
 
 class QuantumModel {
 private:
@@ -32,10 +32,10 @@ private:
     Eigen::VectorXd                     m_localEnergydPsi;
     Eigen::VectorXd                     m_localEnergyGradient;
 
-    void initializeWavefunction(std::string nqsType, std::string nqsInitialization, int nqsSeed);
+    void initializeWavefunction(double omega, std::string nqsType, std::string nqsInitialization, int nqsSeed);
 
 public:
-    QuantumModel(double harmonicoscillatorOmega, bool couloumbinteraction, std::string nqsType, std::string nqsInitialization,
+    QuantumModel(double harmonicoscillatorOmega, bool coulombinteraction, std::string nqsType, std::string nqsInitialization,
                  int nParticles, int nDimensions, int nHidden, int nqsSeed);
 
     void            setGibbsSampler(int seed);
@@ -45,10 +45,11 @@ public:
     void            setUpForSampling();
     void            sample();
     void            accumulateData();
+    void            sampleOneBodyDensities(double rmax, double rmin, double binwidth, Eigen::VectorXd &oneBodyDensities);
     void            computeExpectationValues(int numberOfSamples);
     void            printExpectationValues();
 
-    void            shiftParameters(Eigen::VectorXd shift);
+    void            shiftParameters(const Eigen::VectorXd &shift);
 
     void            writeParametersToFile(std::string filename);
 

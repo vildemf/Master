@@ -1,13 +1,14 @@
 #include "gradientdescentsimple.h"
+#include "iostream"
 
 using Eigen::VectorXd;
 
-GradientDescentSimple::GradientDescentSimple(double learningrate) : GradientDescent() {
+GradientDescentSimple::GradientDescentSimple(double learningrate, double gamma) : GradientDescent() {
     m_eta   = learningrate;
-    m_gamma = 0.0;
+    m_gamma = gamma;
 }
 
-VectorXd GradientDescentSimple::computeParameterShift(VectorXd gradient, int nparameters, int iteration) {
+VectorXd GradientDescentSimple::computeParameterShift(const VectorXd &gradient, int nparameters, int iteration) {
     VectorXd shift(nparameters);
 
     shift       = m_gamma*m_prevShift + m_eta*gradient;

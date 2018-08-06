@@ -16,8 +16,11 @@ private:
 public:
     GradientDescentADAM(double learningrate);
 
-    Eigen::VectorXd computeParameterShift(Eigen::VectorXd gradient, int nparameters, int iteration);
+    Eigen::VectorXd computeParameterShift(const Eigen::VectorXd &gradient, int nparameters, int iteration);
     void            setUp(int nparameters);
+
+
+
 };
 
 #endif // GRADIENTDESCENTADAM_H

@@ -12,7 +12,7 @@ SOURCES += main.cpp \
     sampler/gibbs/gibbs.cpp \
     sampler/metropolis/metropolis.cpp \
     sampler/metropolis/metropolisbruteforce/metropolisbruteforce.cpp \
-    sampler/metropolis/metropolishastings/metropolishastings.cpp \
+    sampler/metropolis/metropolisimportancesampling/metropolisimportancesampling.cpp \
     neuralquantumstate/neuralquantumstatepositivedefinite/neuralquantumstatepositivedefinite.cpp \
     neuralquantumstate/nerualquantumstate.cpp \
     gradientdescent/gradientdescent.cpp \
@@ -31,7 +31,7 @@ HEADERS += \
     sampler/gibbs/gibbs.h \
     sampler/metropolis/metropolis.h \
     sampler/metropolis/metropolisbruteforce/metropolisbruteforce.h \
-    sampler/metropolis/metropolishastings/metropolishastings.h \
+    sampler/metropolis/metropolisimportancesampling/metropolisimportancesampling.h \
     neuralquantumstate/neuralquantumstatepositivedefinite/neuralquantumstatepositivedefinite.h \
     neuralquantumstate/nerualquantumstate.h \
     gradientdescent/gradientdescent.h \

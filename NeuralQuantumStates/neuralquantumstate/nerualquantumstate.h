@@ -33,41 +33,40 @@ protected:
 public:
 
 
-    NeuralQuantumState(int nparticles, int nh, int ndim, std::string initialization, int seed);
+    NeuralQuantumState(double sigma, int nparticles, int nh, int ndim, std::string initialization, int seed);
 
-    virtual double  computePsi(Eigen::VectorXd x, Eigen::VectorXd Q);
-    double          computeLaplacian();
+    virtual double  computePsi(const Eigen::VectorXd &x, const Eigen::VectorXd &Q);
+    double          computeLaplacian() const;
     Eigen::VectorXd computeParameterDerivative();
 
     double          quantumForce(int updateCoordinate);
-    double          quantumForce(int updateCoordinate, Eigen::VectorXd x, Eigen::VectorXd sigmoidQ);
-
+    double          quantumForce(int updateCoordinate, const Eigen::VectorXd &x, const Eigen::VectorXd &sigmoidQ);
 
     void            setPsiComponents();
-    void            setPsiComponents(Eigen::VectorXd Q);
-    void            setPsiComponents(Eigen::VectorXd Q, Eigen::VectorXd sigmoidQ);
+    void            setPsiComponents(const Eigen::VectorXd &Q);
+    void            setPsiComponents(const Eigen::VectorXd &Q, const Eigen::VectorXd &sigmoidQ);
 
-    Eigen::VectorXd computeQ(Eigen::VectorXd x);
-    Eigen::VectorXd computeSigmoidQ(Eigen::VectorXd Q);
+    void computeQ(const Eigen::VectorXd &x, Eigen::VectorXd &Q);
+    void computeSigmoidQ(const Eigen::VectorXd &Q, Eigen::VectorXd &sigmoidQ);
 
-    Eigen::VectorXd getParamterDerivative();
-    void            setParameterDerivative(Eigen::VectorXd parameterDerivative);
+    const Eigen::VectorXd& getParamterDerivative();
+    void            setParameterDerivative(const Eigen::VectorXd &parameterDerivative);
 
     void            setInverseDistances();
     void            setInverseDistances(int particle);
-    Eigen::MatrixXd getInverseDistances();
+    const Eigen::MatrixXd& getInverseDistances() const;
 
-    int             getNParticles();
-    int             getNX();
-    int             getNH();
-    int             getNDim();
+    int             getNParticles() const;
+    int             getNX() const;
+    int             getNH() const;
+    int             getNDim() const;
     double          getPsi();
-    Eigen::VectorXd getX();
+    const Eigen::VectorXd& getX() const;
     double          getA(int i);
     double          getB(int j);
     double          getW(int i, int j);
     void            setPsi(double psi);
-    void            setX(Eigen::VectorXd x);
+    void            setX(const Eigen::VectorXd &x);
     void            setX(int i, double xi);
     void            setA(int i, double ai);
     void            setB(int j, double bj);

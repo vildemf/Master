@@ -10,9 +10,9 @@ using std::make_shared;
 using std::static_pointer_cast;
 using std::move;
 
-QuantumModel::QuantumModel(double harmonicoscillatorOmega, bool couloumbinteraction, string nqsType, string nqsInitialization,
+QuantumModel::QuantumModel(double harmonicoscillatorOmega, bool coulombinteraction, string nqsType, string nqsInitialization,
                            int nParticles, int nDimensions, int nHidden, int nqsSeed) :
-    m_hamiltonian(new Hamiltonian(harmonicoscillatorOmega, couloumbinteraction)) {
+    m_hamiltonian(new Hamiltonian(harmonicoscillatorOmega, coulombinteraction)) {
 
     m_nx               = nParticles*nDimensions;
     m_nh               = nHidden;
@@ -25,14 +25,17 @@ QuantumModel::QuantumModel(double harmonicoscillatorOmega, bool couloumbinteract
     m_localEnergydPsi    .resize(m_nparameters);
     m_localEnergyGradient.resize(m_nparameters);
 
-    initializeWavefunction(nqsType, nqsInitialization, nqsSeed);
+    initializeWavefunction(harmonicoscillatorOmega, nqsType, nqsInitialization, nqsSeed);
 }
 
 
 void QuantumModel::setUpForSampling() {
     setAccumulativeDataToZero();
 
-    m_nqs        ->setPsi(m_nqs->computePsi(m_nqs->getX(), m_nqs->computeQ(m_nqs->getX())));
+    VectorXd Q(m_nh);
+
+    m_nqs        ->computeQ(m_nqs->getX(), Q);
+    m_nqs        ->setPsi(m_nqs->computePsi(m_nqs->getX(), Q));
     m_nqs        ->setPsiComponents();
     m_hamiltonian->setLocalEnergy(m_hamiltonian->computeLocalEnergy(*m_nqs));
     m_nqs        ->setParameterDerivative(m_nqs->computeParameterDerivative());
@@ -67,6 +70,26 @@ void QuantumModel::accumulateData() {
     m_localEnergydPsi    += localEnergy*dPsi;
 }
 
+
+void QuantumModel::sampleOneBodyDensities(double rmax, double rmin, double binwidth, VectorXd &oneBodyDensities) {
+    VectorXd x = m_nqs->getX();
+    double r;
+    int binindex;
+
+    for (int p=0; p<m_nx; p+=m_ndim) {
+        r = 0;
+        for (int d=0; d<m_ndim; d++) {
+            r += x(p + d)*x(p + d);
+        }
+        r = sqrt(r);
+        if (rmin <= r && r < rmax) {
+            binindex = floor((r - rmin)/binwidth);
+            oneBodyDensities(binindex) += 1;
+        }
+    }
+}
+
+
 void QuantumModel::computeExpectationValues(int numberOfSamples) {
     m_localEnergy             = m_localEnergy          /numberOfSamples;
     m_localEnergySquared      = m_localEnergySquared   /numberOfSamples;
@@ -84,12 +107,12 @@ void QuantumModel::computeExpectationValues(int numberOfSamples) {
 void QuantumModel::printExpectationValues() {
     std::cout << "------------------------------------------" << std::endl
               << "Local energy:          " << m_localEnergy << std::endl
-              << "Local energy variance: " << m_variance    << std::endl
+              << "Standard error:        " << sqrt(m_variance)    << std::endl
               << "Acceptance ratio:      " << m_acceptcount << std::endl;
 }
 
 
-void QuantumModel::shiftParameters(VectorXd shift) {
+void QuantumModel::shiftParameters(const VectorXd &shift) {
     for (int i=0; i<m_nx; i++) {
         m_nqs->setA(i, m_nqs->getA(i)+shift(i));
     }
@@ -107,11 +130,13 @@ void QuantumModel::shiftParameters(VectorXd shift) {
 
 
 
-void QuantumModel::initializeWavefunction(string nqsType, string nqsInitialization, int nqsSeed) {
+void QuantumModel::initializeWavefunction(double omega, string nqsType, string nqsInitialization, int nqsSeed) {
     if (nqsType=="general") {
-        m_nqs = make_shared<NeuralQuantumState>(m_nparticles, m_nh, m_ndim, nqsInitialization, nqsSeed);
+        double sigma = 1./sqrt(omega);
+        m_nqs = make_shared<NeuralQuantumState>(sigma, m_nparticles, m_nh, m_ndim, nqsInitialization, nqsSeed);
     } else if (nqsType=="positivedefinite") {
-        m_nqs = make_shared<NeuralQuantumStatePositiveDefinite>(m_nparticles, m_nh, m_ndim,
+        double sigma = 1./sqrt(2*omega);
+        m_nqs = make_shared<NeuralQuantumStatePositiveDefinite>(sigma, m_nparticles, m_nh, m_ndim,
                                                                 nqsInitialization, nqsSeed);
     }
 
@@ -135,8 +160,8 @@ void QuantumModel::setMetropolisSampler(int seed, string samplertype, double ste
     if (samplertype=="bruteforce") {
         unique_ptr<Sampler> sampler(new MetropolisBruteForce(step, m_nqs, seed));
         m_sampler = move(sampler);
-    } else if (samplertype=="hastings") {
-        unique_ptr<Sampler> sampler(new MetropolisHastings(step, m_nqs, seed));
+    } else if (samplertype=="importancesampling") {
+        unique_ptr<Sampler> sampler(new MetropolisImportanceSampling(step, m_nqs, seed));
         m_sampler = move(sampler);
     }
 }
@@ -173,7 +198,6 @@ double QuantumModel::getGradientNorm() {
 void QuantumModel::writeParametersToFile(string filename) {
     std::ofstream parameterfile;
     parameterfile.open(filename, std::ofstream::out);
-
     for (int i=0; i<m_nx; i++) {
         parameterfile << m_nqs->getA(i) << " ";
     }

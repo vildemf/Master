@@ -9,14 +9,14 @@ Hamiltonian::Hamiltonian(double omega, bool includeInteraction) {
 }
 
 
-double Hamiltonian::computeLocalEnergy(NeuralQuantumState &nqs) {
+double Hamiltonian::computeLocalEnergy(const NeuralQuantumState &nqs) {
     int nx                    = nqs.getNX();
     int ndim                  = nqs.getNDim();
     double kinetic            = nqs.computeLaplacian();
     double harmonicoscillator = harmonicOscillatorPotential(nqs.getX());
     double localEnergy        = 0.5*(kinetic + harmonicoscillator);
 
-    // With Couloumb interaction:
+    // With Coulomb interaction:
     if (m_includeInteraction) {
         localEnergy          += nqs.getInverseDistances().sum();
     }
@@ -25,7 +25,7 @@ double Hamiltonian::computeLocalEnergy(NeuralQuantumState &nqs) {
 }
 
 
-double Hamiltonian::harmonicOscillatorPotential(VectorXd x) {
+double Hamiltonian::harmonicOscillatorPotential(const VectorXd &x) {
     return x.dot(m_omega*m_omega*x);
 }
 

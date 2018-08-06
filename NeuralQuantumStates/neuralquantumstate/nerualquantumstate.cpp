@@ -10,13 +10,13 @@ using std::mt19937_64;
 using std::normal_distribution;
 using std::uniform_real_distribution;
 
-NeuralQuantumState::NeuralQuantumState(int nparticles, int nh, int ndim, string initialization, int seed) {
+NeuralQuantumState::NeuralQuantumState(double sigma, int nparticles, int nh, int ndim, string initialization, int seed) {
     m_positiveDefiniteFactor = 1.0; // changed to 0.5 if positive definite, in the derived constructor
     m_nx                     = nparticles*ndim;
     m_nh                     = nh;
     m_ndim                   = ndim;
     m_nparticles             = nparticles;
-    m_sig                    = 1.0; //sigma;
+    m_sig                    = sigma;     //sqrt(2.0); //sigma;
     m_sig2                   = m_sig*m_sig;    //sigma*sigma;
 
     m_sigmoidQ           .resize(m_nh);
@@ -44,7 +44,7 @@ NeuralQuantumState::NeuralQuantumState(int nparticles, int nh, int ndim, string 
 
 
 
-double NeuralQuantumState::computePsi(VectorXd x, VectorXd Q) {
+double NeuralQuantumState::computePsi(const VectorXd &x, const VectorXd &Q) {
     // Used by Metropolis
     // Computes the trial Psi - used at every sampling
     // Computes the current Psi - only used when initializing at
@@ -64,7 +64,7 @@ double NeuralQuantumState::computePsi(VectorXd x, VectorXd Q) {
 
 
 
-double NeuralQuantumState::computeLaplacian() {
+double NeuralQuantumState::computeLaplacian() const {
     double d1lnPsi;
     double d2lnPsi;
     double laplacian = 0.;
@@ -91,8 +91,8 @@ double NeuralQuantumState::computeLaplacian() {
 
 VectorXd NeuralQuantumState::computeParameterDerivative() {
     // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
-    VectorXd dPsi;
-    dPsi.resize(m_nx + m_nh + m_nx*m_nh);
+    VectorXd dPsi(m_nx + m_nh + m_nx*m_nh);
+    //dPsi.resize(m_nx + m_nh + m_nx*m_nh);
 
     for (int k=0; k<m_nx; k++) {
         dPsi(k) = (m_x(k) - m_a(k))/m_sig2;
@@ -120,7 +120,7 @@ double NeuralQuantumState::quantumForce(int updateCoordinate) {
     return 2*m_positiveDefiniteFactor*(-(m_x(updateCoordinate) - m_a(updateCoordinate))/m_sig2 + sum1/m_sig2);
 }
 
-double NeuralQuantumState::quantumForce(int updateCoordinate, VectorXd x, VectorXd sigmoidQ) {
+double NeuralQuantumState::quantumForce(int updateCoordinate, const VectorXd &x, const VectorXd &sigmoidQ) {
     // Calculates the quantum force for the given coordinate for the trial state
     double sum1 = sigmoidQ.dot(m_w.row(updateCoordinate));
 
@@ -133,23 +133,20 @@ double NeuralQuantumState::quantumForce(int updateCoordinate, VectorXd x, Vector
 
 
 
-VectorXd NeuralQuantumState::computeQ(VectorXd x) {
-    VectorXd Q = m_b + (x.transpose()*m_w).transpose()/m_sig2;
-
-    return Q;
+void NeuralQuantumState::computeQ(const VectorXd &x, VectorXd &Q) {
+    Q = m_b + (x.transpose()*m_w).transpose()/m_sig2;
 }
 
-VectorXd NeuralQuantumState::computeSigmoidQ(VectorXd Q) {
-    VectorXd sigmoidQ(m_nh);
+void NeuralQuantumState::computeSigmoidQ(const VectorXd &Q, VectorXd &sigmoidQ) {
+    //VectorXd sigmoidQ(m_nh);
 
     for (int j=0; j<m_nh; j++) {
         sigmoidQ(j) = 1./(1 + exp(-Q(j)));
     }
-    return sigmoidQ;
 }
 
 
-void NeuralQuantumState::setPsiComponents(VectorXd Q, VectorXd sigmoidQ) {
+void NeuralQuantumState::setPsiComponents(const VectorXd &Q, const VectorXd &sigmoidQ) {
     // To be called after position has been updated - used by Metropolis Importance Sampling,
     // which have
     // already computed some quantities for trial expressions.
@@ -160,7 +157,7 @@ void NeuralQuantumState::setPsiComponents(VectorXd Q, VectorXd sigmoidQ) {
         m_derSigmoidQ(j) = expQj/((1+expQj)*(1+expQj));
     }
 }
-void NeuralQuantumState::setPsiComponents(VectorXd Q) {
+void NeuralQuantumState::setPsiComponents(const VectorXd &Q) {
     // To be called after position has been updated - used by Metropolis Brute Force
     double expQj;
 
@@ -172,31 +169,37 @@ void NeuralQuantumState::setPsiComponents(VectorXd Q) {
 }
 void NeuralQuantumState::setPsiComponents() {
     // To be called after position has been updated - used by Gibbs
-    setPsiComponents(computeQ(m_x));
+    VectorXd Q(m_nh);
+    computeQ(m_x, Q);
+    setPsiComponents(Q);
 }
 
 
 
 
-VectorXd NeuralQuantumState::getParamterDerivative() {
+const VectorXd& NeuralQuantumState::getParamterDerivative() {
     return m_parameterDerivative;
 }
 
-int NeuralQuantumState::getNX() {
+int NeuralQuantumState::getNX() const {
     return m_nx;
 }
-int NeuralQuantumState::getNH() {
+int NeuralQuantumState::getNH() const {
     return m_nh;
 }
-int NeuralQuantumState::getNDim() {
+int NeuralQuantumState::getNDim() const {
     return m_ndim;
+}
+
+int NeuralQuantumState::getNParticles() const {
+    return m_nparticles;
 }
 
 double NeuralQuantumState::getPsi() {
     return m_psi;
 }
 
-VectorXd NeuralQuantumState::getX() {
+const VectorXd& NeuralQuantumState::getX() const {
     return m_x;
 }
 double NeuralQuantumState::getA(int i) {
@@ -209,11 +212,8 @@ double NeuralQuantumState::getW(int i, int j) {
     return m_w(i,j);
 }
 
-int NeuralQuantumState::getNParticles() {
-    return m_nparticles;
-}
 
-void NeuralQuantumState::setParameterDerivative(VectorXd parameterDerivative) {
+void NeuralQuantumState::setParameterDerivative(const VectorXd &parameterDerivative) {
     m_parameterDerivative = parameterDerivative;
 }
 
@@ -221,7 +221,7 @@ void NeuralQuantumState::setPsi(double psi) {
     m_psi = psi;
 }
 
-void NeuralQuantumState::setX(VectorXd x) {
+void NeuralQuantumState::setX(const VectorXd &x) {
     m_x = x;
 }
 void NeuralQuantumState::setX(int i, double xi) {
@@ -237,11 +237,9 @@ void NeuralQuantumState::setW(int i, int j, double wij) {
     m_w(i,j) = wij;
 }
 
-MatrixXd NeuralQuantumState::getInverseDistances() {
+const MatrixXd& NeuralQuantumState::getInverseDistances() const {
     return m_inverseDistances;
 }
-
-
 
 
 

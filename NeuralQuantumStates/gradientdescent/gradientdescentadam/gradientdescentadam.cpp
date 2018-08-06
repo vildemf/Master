@@ -10,7 +10,7 @@ GradientDescentADAM::GradientDescentADAM(double learningrate) : GradientDescent(
     m_beta2   = 0.99;
 }
 
-VectorXd GradientDescentADAM::computeParameterShift(Eigen::VectorXd gradient, int nparameters, int iteration) {
+VectorXd GradientDescentADAM::computeParameterShift(const Eigen::VectorXd &gradient, int nparameters, int iteration) {
     VectorXd shift(nparameters);
     VectorXd m(nparameters);
     VectorXd s(nparameters);
@@ -43,3 +43,4 @@ void GradientDescentADAM::setUp(int nparameters) {
     m_mprev.setZero();
     m_sprev.setZero();
 }
+

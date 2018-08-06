@@ -8,7 +8,7 @@ class GradientDescent {
 public:
     GradientDescent();
 
-    virtual Eigen::VectorXd computeParameterShift(Eigen::VectorXd gradient, int nparameters, int iteration) = 0;
+    virtual Eigen::VectorXd computeParameterShift(const Eigen::VectorXd &gradient, int nparameters, int iteration) = 0;
     virtual void            setUp(int nparameters) = 0;
 };
 

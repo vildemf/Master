@@ -13,10 +13,10 @@ private:
     bool                             m_writeIterativeExpectations;
     std::string                      m_IterativeExpectationsFilename;
 
-    void initializeMinimizer(double learningrate, std::string minimizertype);
+    void initializeMinimizer(double learningrate, std::string minimizertype, double gamma);
 
 public:
-    Trainer(int numberOfIterations, double learningrate, std::string minimizertype);
+    Trainer(int numberOfIterations, double learningrate, std::string minimizertype, double gamma=0.0);
 
     void train(MonteCarloMethod &method, QuantumModel &model);
     void printInfo(int iteration, double gradientNorm);

@@ -3,12 +3,14 @@
 using Eigen::VectorXd;
 using std::string;
 using std::shared_ptr;
+using std::fstream;
 
 MonteCarloMethod::MonteCarloMethod(int numberOfSamples, shared_ptr<QuantumModel> model, int seed) :
     m_model(model) {
 
     // constructor when using Gibbs sampling
 
+    m_sampleOneBodyDensities   = false;
     m_writeEnergiesForBlocking = false;
     m_numberOfSamples          = numberOfSamples;
     m_model                    ->setGibbsSampler(seed);
@@ -21,6 +23,7 @@ MonteCarloMethod::MonteCarloMethod(int numberOfSamples, shared_ptr<QuantumModel>
     // The idea is now that this should point to same object of model as a pointer outsiden this class (ie not
     // a copy). We point to model with a shared pointer for this reason.
 
+    m_sampleOneBodyDensities   = false;
     m_writeEnergiesForBlocking = false;
     m_numberOfSamples          = numberOfSamples;
     m_model                    ->setMetropolisSampler(seed, samplertype, step);
@@ -29,6 +32,14 @@ MonteCarloMethod::MonteCarloMethod(int numberOfSamples, shared_ptr<QuantumModel>
 
 
 void MonteCarloMethod::runMonteCarlo() {
+    int nbins = 200;
+    double rmin  = 0.0;
+    double rmax  = 7.0;
+
+    double binwidth = (rmax - rmin)/nbins;
+    VectorXd onebodydensities(nbins);
+    onebodydensities.setZero();
+
 
     m_model->setUpForSampling();
     int  effectiveNumberOfSamples = 0;
@@ -42,16 +53,27 @@ void MonteCarloMethod::runMonteCarlo() {
         m_model->sample();
         equilibration = sample > 0.1*m_numberOfSamples;
 
-        if (equilibration && !m_writeEnergiesForBlocking) {
+        if (equilibration) {
             m_model->accumulateData();
             effectiveNumberOfSamples++;
 
-        } else if (equilibration && m_writeEnergiesForBlocking) {
-            m_model->accumulateData();
-            effectiveNumberOfSamples++;
-            //std::cout << "hello" << std::endl;
-            m_energiesblockingfile << m_model->getSampleEnergy() << "\n";
+            if (m_writeEnergiesForBlocking) {
+                m_energiesblockingfile << m_model->getSampleEnergy() << "\n";
+            }
+            if (m_sampleOneBodyDensities) {
+                m_model->sampleOneBodyDensities(rmax, rmin, binwidth, onebodydensities);
+            }
         }
+
+    }
+
+    if (m_sampleOneBodyDensities) {
+        fstream onebody;
+        onebody.open(m_onebodydensitiesfilename, std::fstream::out);
+        for (int i=0; i<nbins; i++) {
+            onebody << onebodydensities(i) << "\n";
+        }
+        onebody.close();
     }
 
     if (m_writeEnergiesForBlocking) {
@@ -59,16 +81,19 @@ void MonteCarloMethod::runMonteCarlo() {
         m_writeEnergiesForBlocking = false;
     }
 
-    m_model->computeExpectationValues(effectiveNumberOfSamples); // !! equilibration! acceptance count!
+    m_model->computeExpectationValues(effectiveNumberOfSamples);
     m_model->printExpectationValues();
 }
 
 void MonteCarloMethod::setWriteEnergiesForBlocking(string filename) {
     // provide way of stopping as well (setting to false)? do automatically in the closing if test?
-    //
+
     m_writeEnergiesForBlocking = true;
     m_energiesblockingfilename = filename;
+}
 
+void MonteCarloMethod::setWriteOneBodyDensities(string filename) {
 
-    // Open file
+    m_sampleOneBodyDensities = true;
+    m_onebodydensitiesfilename = filename;
 }

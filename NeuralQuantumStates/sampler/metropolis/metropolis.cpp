@@ -24,7 +24,7 @@ void Metropolis::sample(bool &accepted) {
     double prob       = probabilityRatio();
     double prop       = proposalRatio();
     double acceptance = prob*prop;
-    accepted          =false;
+    accepted          = false;
 
     if (acceptance > m_distributionAcceptanceTest(m_randomEngine)) {
         accepted      = true;
@@ -42,7 +42,8 @@ double Metropolis::probabilityRatio() {
 }*/
 
 double Metropolis::probabilityRatio() {
-    m_QTrial          = m_nqs->computeQ(m_positionTrial);
+    m_nqs->computeQ(m_positionTrial, m_QTrial);
+
     m_psiTrial        = m_nqs->computePsi(m_positionTrial, m_QTrial);
     double psiCurrent = m_nqs->getPsi();
 

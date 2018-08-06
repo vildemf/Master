@@ -5,12 +5,12 @@ using Eigen::VectorXd;
 using std::string;
 using std::unique_ptr;
 
-Trainer::Trainer(int numberOfIterations, double learningrate, string minimizertype) {
+Trainer::Trainer(int numberOfIterations, double learningrate, string minimizertype, double gamma) {
 
     m_numberOfIterations         = numberOfIterations;
     m_writeIterativeExpectations = false;
 
-    initializeMinimizer(learningrate, minimizertype);
+    initializeMinimizer(learningrate, minimizertype, gamma);
 
 }
 
@@ -25,6 +25,11 @@ void Trainer::train(MonteCarloMethod &method, QuantumModel &model) {
     }
 
     for (int iteration=0; iteration<m_numberOfIterations; iteration++) {
+        string foldername = "/Users/Vilde/Documents/masters/NQS_paper/tryHOrbm/";
+        string filename = foldername + "MethodSelectionSampling/Training/blocking/" +
+                "ISintPDEpoch" + std::to_string(iteration) + ".txt";
+        //method.setWriteEnergiesForBlocking(filename);
+
 
         method.runMonteCarlo();
         printInfo(iteration, model.getGradientNorm());
@@ -49,12 +54,12 @@ void Trainer::train(MonteCarloMethod &method, QuantumModel &model) {
 }
 
 
-void Trainer::initializeMinimizer(double learningrate, string minimizertype) {
+void Trainer::initializeMinimizer(double learningrate, string minimizertype, double gamma) {
     if (minimizertype=="adam") {
         unique_ptr<GradientDescent> minimizer(new GradientDescentADAM(learningrate));
         m_minimizer = move(minimizer);
     } else {
-        unique_ptr<GradientDescent> minimizer(new GradientDescentSimple(learningrate));
+        unique_ptr<GradientDescent> minimizer(new GradientDescentSimple(learningrate, gamma));
         m_minimizer = move(minimizer);
     }
 }

@@ -13,8 +13,8 @@ private:
 
 public:
     Hamiltonian(double omega, bool includeInteraction);
-    double computeLocalEnergy(NeuralQuantumState &nqs);
-    double harmonicOscillatorPotential(Eigen::VectorXd x);
+    double computeLocalEnergy(const NeuralQuantumState &nqs);
+    double harmonicOscillatorPotential(const Eigen::VectorXd &x);
     double getLocalEnergy();
     void   setLocalEnergy(double localEnergy);
 };
