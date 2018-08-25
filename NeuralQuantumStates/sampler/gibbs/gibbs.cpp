@@ -12,6 +12,10 @@ Gibbs::Gibbs(shared_ptr<NeuralQuantumStatePositiveDefinite> nqs, int seed) :
 
 
 void Gibbs::sample(bool &accepted) {
+    /*
+     * The function samples a new position configuration accordin to the Gibbs method.
+     */
+
     // Set new hidden variables given positions, according to the logistic sigmoid function
     // (implemented by comparing the sigmoid probability to a uniform random variable)
     VectorXd probHGivenX = m_nqs->probHGivenX();

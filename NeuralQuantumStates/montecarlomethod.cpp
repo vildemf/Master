@@ -7,8 +7,9 @@ using std::fstream;
 
 MonteCarloMethod::MonteCarloMethod(int numberOfSamples, shared_ptr<QuantumModel> model, int seed) :
     m_model(model) {
-
-    // constructor when using Gibbs sampling
+    /*
+     * The constructor initializes a Monte Carlo method using Gibbs sampling.
+     */
 
     m_sampleOneBodyDensities   = false;
     m_writeEnergiesForBlocking = false;
@@ -19,9 +20,9 @@ MonteCarloMethod::MonteCarloMethod(int numberOfSamples, shared_ptr<QuantumModel>
 
 MonteCarloMethod::MonteCarloMethod(int numberOfSamples, shared_ptr<QuantumModel> model, int seed,
                                    string samplertype, double step) : m_model(model){
-    // constructor when using Metropolis sampling
-    // The idea is now that this should point to same object of model as a pointer outsiden this class (ie not
-    // a copy). We point to model with a shared pointer for this reason.
+    /*
+     * The constructor initializes a Monte Carlo method using Metropolis sampling.
+     */
 
     m_sampleOneBodyDensities   = false;
     m_writeEnergiesForBlocking = false;
@@ -32,6 +33,10 @@ MonteCarloMethod::MonteCarloMethod(int numberOfSamples, shared_ptr<QuantumModel>
 
 
 void MonteCarloMethod::runMonteCarlo() {
+    /*
+     * The function runs a Monte Carlo simulation for the given model m_model.
+     */
+
     int nbins = 200;
     double rmin  = 0.0;
     double rmax  = 7.0;
@@ -86,13 +91,22 @@ void MonteCarloMethod::runMonteCarlo() {
 }
 
 void MonteCarloMethod::setWriteEnergiesForBlocking(string filename) {
-    // provide way of stopping as well (setting to false)? do automatically in the closing if test?
+    /*
+     * Call this function in order to write the energies sampled during a Monte Carlo sampling to file.
+     *
+     * Note: Should there also be a way for the user to turn this off again?
+     */
 
     m_writeEnergiesForBlocking = true;
     m_energiesblockingfilename = filename;
 }
 
 void MonteCarloMethod::setWriteOneBodyDensities(string filename) {
+    /*
+     * Call this function in order to sample one body densities and write to file.
+     *
+     * Note: Should there also be a way for the user to turn this off again?
+     */
 
     m_sampleOneBodyDensities = true;
     m_onebodydensitiesfilename = filename;

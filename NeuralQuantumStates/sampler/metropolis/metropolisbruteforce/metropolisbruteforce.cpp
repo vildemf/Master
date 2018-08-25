@@ -11,17 +11,12 @@ MetropolisBruteForce::MetropolisBruteForce(double step, shared_ptr<NeuralQuantum
     m_distributionStep = uniform_real_distribution<double>(-0.5, 0.5);
 }
 
-/*void MetropolisBruteForce::setTrialSample() {
-    // ! i contstructor
-    std::uniform_int_distribution<> mrand(0, m_nqs->getNX()-1);
-    int updateCoordinate         = mrand(m_randomEngine);
-    m_xTrial                     = m_nqs->getX();
-    m_xTrial(updateCoordinate)  += m_distributionStep(m_randomEngine)*m_step;
-}*/
-
-
 
 void MetropolisBruteForce::setTrialSample() {
+    /*
+     * The function sets a trial position configuration according to the brute force method.
+     */
+
     m_particle      = m_distributionParticles(m_randomEngine);
     m_positionTrial = m_nqs->getX();
 
@@ -31,17 +26,18 @@ void MetropolisBruteForce::setTrialSample() {
 }
 
 double MetropolisBruteForce::proposalRatio() {
+    /*
+     * The proposal ratio of the brute force method is simply 1.
+     */
+
     return 1.0;
 }
 
-/*
 void MetropolisBruteForce::acceptTrialSample() {
-    m_nqs->setX(m_xTrial);
-    m_nqs->setPsi(m_psiTrial);
-    m_nqs->setPsiComponents(m_QTrial);
-}*/
+    /*
+     * The function performs the updates necessary when a trial state is accepted.
+     */
 
-void MetropolisBruteForce::acceptTrialSample() {
     m_nqs->setX(m_positionTrial);
     m_nqs->setInverseDistances(m_particle);
     m_nqs->setPsi(m_psiTrial);

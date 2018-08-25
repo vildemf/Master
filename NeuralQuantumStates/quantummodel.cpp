@@ -30,6 +30,10 @@ QuantumModel::QuantumModel(double harmonicoscillatorOmega, bool coulombinteracti
 
 
 void QuantumModel::setUpForSampling() {
+    /*
+     * The function sets up the model for a Monte Carlo simulation.
+     */
+
     setAccumulativeDataToZero();
 
     VectorXd Q(m_nh);
@@ -42,6 +46,10 @@ void QuantumModel::setUpForSampling() {
 }
 
 void QuantumModel::setAccumulativeDataToZero() {
+    /*
+     * The function sets variables which store accumulated data to zero.
+     */
+
     m_localEnergy        = 0;
     m_localEnergySquared = 0;
     m_acceptcount        = 0;
@@ -51,10 +59,18 @@ void QuantumModel::setAccumulativeDataToZero() {
 }
 
 void QuantumModel::sample() {
+    /*
+     * The function samples a new position configuration.
+     */
+
     m_sampler->sample(m_accepted);
 }
 
 void QuantumModel::accumulateData() {
+    /*
+     * The function accumulates data for the current state of the system.
+     */
+
     if (m_accepted) {
         m_nqs->setParameterDerivative(m_nqs->computeParameterDerivative());
         m_hamiltonian->setLocalEnergy(m_hamiltonian->computeLocalEnergy(*m_nqs));
@@ -72,6 +88,11 @@ void QuantumModel::accumulateData() {
 
 
 void QuantumModel::sampleOneBodyDensities(double rmax, double rmin, double binwidth, VectorXd &oneBodyDensities) {
+    /*
+     * The function counts positions taken by particles to be used to compute one body densities after
+     * a Monte Carlo simulation.
+     */
+
     VectorXd x = m_nqs->getX();
     double r;
     int binindex;
@@ -91,6 +112,11 @@ void QuantumModel::sampleOneBodyDensities(double rmax, double rmin, double binwi
 
 
 void QuantumModel::computeExpectationValues(int numberOfSamples) {
+    /*
+     * The function computes expectation values from data accumulated during a Monte Carlo
+     * simulation.
+     */
+
     m_localEnergy             = m_localEnergy          /numberOfSamples;
     m_localEnergySquared      = m_localEnergySquared   /numberOfSamples;
     m_dPsi                    = m_dPsi                 /numberOfSamples;
@@ -105,6 +131,11 @@ void QuantumModel::computeExpectationValues(int numberOfSamples) {
 
 
 void QuantumModel::printExpectationValues() {
+    /*
+     * The function writes quantities of interest to the terminal after a
+     * Monte Carlo run.
+     */
+
     std::cout << "------------------------------------------" << std::endl
               << "Local energy:          " << m_localEnergy << std::endl
               << "Standard error:        " << sqrt(m_variance)    << std::endl
@@ -113,6 +144,11 @@ void QuantumModel::printExpectationValues() {
 
 
 void QuantumModel::shiftParameters(const VectorXd &shift) {
+    /*
+     * The function updates the network parameters by adding a given shift.
+     * It is used by the gradient descent method.
+     */
+
     for (int i=0; i<m_nx; i++) {
         m_nqs->setA(i, m_nqs->getA(i)+shift(i));
     }
@@ -131,6 +167,10 @@ void QuantumModel::shiftParameters(const VectorXd &shift) {
 
 
 void QuantumModel::initializeWavefunction(double omega, string nqsType, string nqsInitialization, int nqsSeed) {
+    /*
+     * The function initializes the wavefunction object.
+     */
+
     if (nqsType=="general") {
         double sigma = 1./sqrt(omega);
         m_nqs = make_shared<NeuralQuantumState>(sigma, m_nparticles, m_nh, m_ndim, nqsInitialization, nqsSeed);
@@ -146,6 +186,10 @@ void QuantumModel::initializeWavefunction(double omega, string nqsType, string n
 
 
 void QuantumModel::setGibbsSampler(int seed) {
+    /*
+     * The function initializes a Gibbs sampler if the user have chosen the Gibbs sampling method.
+     */
+
     if (m_wavefunctiontype=="positivedefinite") {
         shared_ptr<NeuralQuantumStatePositiveDefinite> nqsPosDef
                 = static_pointer_cast<NeuralQuantumStatePositiveDefinite>(m_nqs);
@@ -157,6 +201,10 @@ void QuantumModel::setGibbsSampler(int seed) {
 }
 
 void QuantumModel::setMetropolisSampler(int seed, string samplertype, double step) {
+    /*
+     * The function initializes a Metropolis sampler if the user have chosen the Metropolis sampling method.
+     */
+
     if (samplertype=="bruteforce") {
         unique_ptr<Sampler> sampler(new MetropolisBruteForce(step, m_nqs, seed));
         m_sampler = move(sampler);
@@ -196,6 +244,11 @@ double QuantumModel::getGradientNorm() {
 
 
 void QuantumModel::writeParametersToFile(string filename) {
+    /*
+     * The function writes the parameters of the wavefunction to file. This is useful if the user
+     * wants to save a trained network to be used at another time.
+     */
+
     std::ofstream parameterfile;
     parameterfile.open(filename, std::ofstream::out);
     for (int i=0; i<m_nx; i++) {

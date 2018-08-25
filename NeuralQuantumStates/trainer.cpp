@@ -16,6 +16,10 @@ Trainer::Trainer(int numberOfIterations, double learningrate, string minimizerty
 
 
 void Trainer::train(MonteCarloMethod &method, QuantumModel &model) {
+    /*
+     * The function trains the model using the given Monte Carlo method.
+     */
+
     int nparameters = model.getNParameters();
     m_minimizer->setUp(nparameters);
     VectorXd shift(nparameters);
@@ -25,12 +29,6 @@ void Trainer::train(MonteCarloMethod &method, QuantumModel &model) {
     }
 
     for (int iteration=0; iteration<m_numberOfIterations; iteration++) {
-        string foldername = "/Users/Vilde/Documents/masters/NQS_paper/tryHOrbm/";
-        string filename = foldername + "MethodSelectionSampling/Training/blocking/" +
-                "ISintPDEpoch" + std::to_string(iteration) + ".txt";
-        //method.setWriteEnergiesForBlocking(filename);
-
-
         method.runMonteCarlo();
         printInfo(iteration, model.getGradientNorm());
 
@@ -55,6 +53,10 @@ void Trainer::train(MonteCarloMethod &method, QuantumModel &model) {
 
 
 void Trainer::initializeMinimizer(double learningrate, string minimizertype, double gamma) {
+    /*
+     * The function initializes the minimizer to be used for training.
+     */
+
     if (minimizertype=="adam") {
         unique_ptr<GradientDescent> minimizer(new GradientDescentADAM(learningrate));
         m_minimizer = move(minimizer);
@@ -65,11 +67,22 @@ void Trainer::initializeMinimizer(double learningrate, string minimizertype, dou
 }
 
 void Trainer::setWriteIterativeExpectations(string filename) {
+    /*
+     * Call this function to write the expected energy, (naive) variance and norm of the gradient to
+     * file at each training epoch.
+     *
+     * Note: Should there also be a way for the user to turn this off?
+     */
+
     m_writeIterativeExpectations    = true;
     m_IterativeExpectationsFilename = filename;
 }
 
 void Trainer::printInfo(int iteration, double gradientNorm) {
+    /*
+     * The function writes information to the terminal during training.
+     */
+
     std::cout << "Gradient norm:         " << gradientNorm << std::endl
               << "Training epoch " << iteration << std::endl;
 }

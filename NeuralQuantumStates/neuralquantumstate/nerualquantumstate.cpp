@@ -11,13 +11,29 @@ using std::normal_distribution;
 using std::uniform_real_distribution;
 
 NeuralQuantumState::NeuralQuantumState(double sigma, int nparticles, int nh, int ndim, string initialization, int seed) {
-    m_positiveDefiniteFactor = 1.0; // changed to 0.5 if positive definite, in the derived constructor
+    /*
+     * The constructor of the Neural Quantum State (NQS) base class. It represents a wavefunction modeled by a restricted
+     * Boltzmann machine. It is the general NQS which can represent both real and complex wavefunctions. The derived
+     * class NeuralQuantumStatePositiveDefinite can only represent positive definite wavefunctions. The benefit of
+     * it is that its position configurations can be sampled with the Gibbs method.
+     *
+     * Since many calculations are similar for the two except for one factor, the calculations are implemented
+     * only once, in the base class, and the factor difference is implemented by the variable
+     * m_positiveDefiniteFactor which is 1.0 for the general wavefunction and 0.5 for the positive definite one.
+     *
+     * This constructor initalizes class variables, including the Boltzmann machine's weights and biases, which are
+     * initialized with uniform random numbers, Gaussian random numbers or numbers of an already trained network
+     * read from file, depending on the user's choice. Finally, the constructor initializes the position vector
+     * with uniform random numbers.
+     */
+
+    m_positiveDefiniteFactor = 1.0;
     m_nx                     = nparticles*ndim;
     m_nh                     = nh;
     m_ndim                   = ndim;
     m_nparticles             = nparticles;
-    m_sig                    = sigma;     //sqrt(2.0); //sigma;
-    m_sig2                   = m_sig*m_sig;    //sigma*sigma;
+    m_sig                    = sigma;
+    m_sig2                   = m_sig*m_sig;
 
     m_sigmoidQ           .resize(m_nh);
     m_derSigmoidQ        .resize(m_nh);
@@ -45,10 +61,15 @@ NeuralQuantumState::NeuralQuantumState(double sigma, int nparticles, int nh, int
 
 
 double NeuralQuantumState::computePsi(const VectorXd &x, const VectorXd &Q) {
-    // Used by Metropolis
-    // Computes the trial Psi - used at every sampling
-    // Computes the current Psi - only used when initializing at
-    // the beginning of a new cycle
+    /*
+     * The function computes the value of the wavefunction for a given position vector and
+     * pre-computed value of Q.
+     * It is used by Metropolis to
+     * - Compute the value of the trial wavefunction (used at every sampling step)
+     * - Compute the value of the current wavefunction (only used when initializing and
+     *   at the beginning of a new training epoch when weights have been updated)
+     */
+
     double factor1 = (x-m_a).dot(x-m_a);
     factor1        = exp(-factor1/(2.0*m_sig2));
 
@@ -65,6 +86,10 @@ double NeuralQuantumState::computePsi(const VectorXd &x, const VectorXd &Q) {
 
 
 double NeuralQuantumState::computeLaplacian() const {
+    /*
+     * The function computes the Laplacian of the wavefunction.
+     */
+
     double d1lnPsi;
     double d2lnPsi;
     double laplacian = 0.;
@@ -90,9 +115,12 @@ double NeuralQuantumState::computeLaplacian() const {
 
 
 VectorXd NeuralQuantumState::computeParameterDerivative() {
-    // Compute the 1/psi * dPsi/dalpha_i, that is Psi derived wrt each RBM parameter.
+    /*
+     * The function computes 1/psi * dPsi/dalpha_i, that is, the wavefunction
+     * differentiated with respect to each of the network parameters a_i, b_j and w_ij.
+     */
+
     VectorXd dPsi(m_nx + m_nh + m_nx*m_nh);
-    //dPsi.resize(m_nx + m_nh + m_nx*m_nh);
 
     for (int k=0; k<m_nx; k++) {
         dPsi(k) = (m_x(k) - m_a(k))/m_sig2;
@@ -114,14 +142,25 @@ VectorXd NeuralQuantumState::computeParameterDerivative() {
 
 
 double NeuralQuantumState::quantumForce(int updateCoordinate) {
-    // Calculates the quantum force for the given coordinate for the current state
+    /*
+     * The function computes the quantum force for the given coordinate.
+     * It is used by Metropolis Importance Sampling to compute the quantum force of the current
+     * state, since it will use this object's current value of the position vector and the factor Q.
+     */
+
     double sum1 = m_sigmoidQ.dot(m_w.row(updateCoordinate));
 
     return 2*m_positiveDefiniteFactor*(-(m_x(updateCoordinate) - m_a(updateCoordinate))/m_sig2 + sum1/m_sig2);
 }
 
 double NeuralQuantumState::quantumForce(int updateCoordinate, const VectorXd &x, const VectorXd &sigmoidQ) {
-    // Calculates the quantum force for the given coordinate for the trial state
+    /*
+     * The function computes the quantum force for the given coordinate and position vector.
+     * It is used by Metropolis Importance Sampling to comptue the quantum force of the trial state,
+     * since it does not use this object's current value of the position vector, but a given position
+     * vector (and the corresponding pre-computed value of the factor Q).
+     */
+
     double sum1 = sigmoidQ.dot(m_w.row(updateCoordinate));
 
     return 2*m_positiveDefiniteFactor*(-(x(updateCoordinate) - m_a(updateCoordinate))/m_sig2 + sum1/m_sig2);
@@ -134,11 +173,17 @@ double NeuralQuantumState::quantumForce(int updateCoordinate, const VectorXd &x,
 
 
 void NeuralQuantumState::computeQ(const VectorXd &x, VectorXd &Q) {
+    /*
+     * The function computes the value of the vector Q for a given position vector x.
+     */
+
     Q = m_b + (x.transpose()*m_w).transpose()/m_sig2;
 }
 
 void NeuralQuantumState::computeSigmoidQ(const VectorXd &Q, VectorXd &sigmoidQ) {
-    //VectorXd sigmoidQ(m_nh);
+    /*
+     * The function computes the value of sigmoidQ.
+     */
 
     for (int j=0; j<m_nh; j++) {
         sigmoidQ(j) = 1./(1 + exp(-Q(j)));
@@ -147,9 +192,17 @@ void NeuralQuantumState::computeSigmoidQ(const VectorXd &Q, VectorXd &sigmoidQ) 
 
 
 void NeuralQuantumState::setPsiComponents(const VectorXd &Q, const VectorXd &sigmoidQ) {
-    // To be called after position has been updated - used by Metropolis Importance Sampling,
-    // which have
-    // already computed some quantities for trial expressions.
+    /*
+     * The point of the function setPsiComponents(...) is to store the values sigmoidQ and
+     * derSigmoidQ which are used several times, to save computation time. After positions have
+     * been updated by the sampler, one of the implementations of this function should be called to make
+     * sure sigmoidQ and derSigmoidQ are also updated. Different implementations will be called depending
+     * on whether the sampler has already computed some values, to avoid recalculations.
+     *
+     * This implementation of setPsiComponents(...) is used by Metropolis Importance Sampling, which
+     * have already calculated sigmoidQ, hence it is given as an argument.
+     */
+
     m_sigmoidQ           = sigmoidQ;
     double expQj;
     for (int j=0; j<m_nh; j++) {
@@ -158,7 +211,17 @@ void NeuralQuantumState::setPsiComponents(const VectorXd &Q, const VectorXd &sig
     }
 }
 void NeuralQuantumState::setPsiComponents(const VectorXd &Q) {
-    // To be called after position has been updated - used by Metropolis Brute Force
+    /*
+     * The point of the function setPsiComponents(...) is to store the values sigmoidQ and
+     * derSigmoidQ which are used several times, to save computation time. After positions have
+     * been updated by the sampler, one of the implementations of this function should be called to make
+     * sure sigmoidQ and derSigmoidQ are also updated. Different implementations will be called depending
+     * on whether the sampler has already computed some values, to avoid recalculations.
+     *
+     * This implementation of setPsiComponents(...) is used by Brute Force, which
+     * has neither precomputed sigmoidQ nor derSigmoidQ, hence both are computed here.
+     */
+
     double expQj;
 
     for (int j=0; j<m_nh; j++) {
@@ -168,7 +231,19 @@ void NeuralQuantumState::setPsiComponents(const VectorXd &Q) {
     }
 }
 void NeuralQuantumState::setPsiComponents() {
-    // To be called after position has been updated - used by Gibbs
+    /*
+     * The point of the function setPsiComponents(...) is to store the values sigmoidQ and
+     * derSigmoidQ which are used several times, to save computation time. After positions have
+     * been updated by the sampler, one of the implementations of this function should be called to make
+     * sure sigmoidQ and derSigmoidQ are also updated. Different implementations will be called depending
+     * on whether the sampler has already computed some values, to avoid recalculations.
+     *
+     * This implementation of setPsiComponents(...) is used by Gibbs, which
+     * has neither precomputed sigmoidQ nor derSigmoidQ, hence both are computed here.
+     * Additionally, it has not computed the new Q, so it also has to be computed here, rather than taken
+     * as an argument.
+     */
+
     VectorXd Q(m_nh);
     computeQ(m_x, Q);
     setPsiComponents(Q);
@@ -245,7 +320,15 @@ const MatrixXd& NeuralQuantumState::getInverseDistances() const {
 
 
 void NeuralQuantumState::setInverseDistances(int particle) {
-    // Call after m_x has been changed by one particle
+    /*
+     * The setInverseDistances(...) function updates the matrix m_inverseDistances, is an upper triangular
+     * matrix which stores 1/r_ij as its elements, where r_ij = the distance between particle i and j.
+     * It should be called whenever the position vector m_x has been updated.
+     *
+     * This setInverseDistances(...) should be called when just a signle particle has been moved. It
+     * takes the index of the moved particle as its argument.
+     */
+
     double distanceSquared;
     // Loop over all the other particles and change the distance to them
     int p=0;
@@ -267,7 +350,14 @@ void NeuralQuantumState::setInverseDistances(int particle) {
 }
 
 void NeuralQuantumState::setInverseDistances() {
-    // Call if all of m_x has been changed
+    /*
+     * The setInverseDistances(...) function updates the matrix m_inverseDistances, is an upper triangular
+     * matrix which stores 1/r_ij as its elements, where r_ij = the distance between particle i and j.
+     * It should be called whenever the position vector m_x has been updated.
+     *
+     * This implementation of setInverseDistances(...) should be called when all particles have been moved.
+     */
+
     double distanceSquared;
     int p1 = 0;
     int p2;
@@ -293,6 +383,11 @@ void NeuralQuantumState::setInverseDistances() {
 
 
 void NeuralQuantumState::initializeParametersGaussian(mt19937_64 randomengine) {
+    /*
+     * The function initializes the network parameters with Gaussian random numbers. It is called by
+     * the constructor if Gaussian numbers have been chosen by the user.
+     */
+
     double sigma_initRBM = 0.1;
     m_x.resize(m_nx);
     m_a.resize(m_nx);
@@ -313,14 +408,18 @@ void NeuralQuantumState::initializeParametersGaussian(mt19937_64 randomengine) {
     }
 }
 void NeuralQuantumState::initializeParametersFromfile(string filename) {
-    /* this should not require the user to set nx and nh.
-     Assumed format of file:
-     a0 a1 a2 ...
-     b0 b1 b2 ...
-     w00 w01 w02 ...
-     w10 w11 w12 ...
-     ...
-    */
+    /*
+     * The function initializes the network parameters with already trained parameters read from file. It is
+     * called by the constructor if the user has chosen this initialization option and given a file name.
+     * The file is assumed to be on the following format:
+     * a0 a1 a2 ...
+     * b0 b1 b2 ...
+     * w00 w01 w02 ...
+     * w10 w11 w12 ...
+     * ...
+     *
+     */
+
     m_a.resize(m_nx);
     m_b.resize(m_nh);
     m_w.resize(m_nx, m_nh);
@@ -357,6 +456,10 @@ void NeuralQuantumState::initializeParametersFromfile(string filename) {
 
 
 void NeuralQuantumState::initializePositions(mt19937_64 randomengine) {
+    /*
+     * The function initializes the positions of the particles with uniform random numbers.
+     */
+
     m_x.resize(m_nx);
     uniform_real_distribution<double> distribution_initX(-0.5,0.5);
 

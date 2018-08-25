@@ -17,21 +17,11 @@ MetropolisImportanceSampling::MetropolisImportanceSampling(double dt, shared_ptr
     m_positionCurrent    .resize(m_nqs->getNX());
 }
 
-/*
-void MetropolisImportanceSampling::setTrialSample() {
-    // Set i kontruktor
-    std::uniform_int_distribution<> mrand(0, m_nqs->getNX()-1);
-    m_updateCoordinate = mrand(m_randomEngine);
-
-    m_xTrial                   = m_nqs->getX();
-    m_quantumForceCurrent      = m_nqs->quantumForce(m_updateCoordinate);
-    double xi                  = m_distributionXi(m_randomEngine);
-    m_xCurrent                 = m_xTrial(m_updateCoordinate);
-    m_xTrial(m_updateCoordinate) = m_xCurrent + m_diffusionConstant*m_quantumForceCurrent*m_dt + xi*sqrt(m_dt);
-
-}*/
 
 void MetropolisImportanceSampling::setTrialSample() {
+    /*
+     * The function sets a trial position configuration according to the importance sampling method.
+     */
 
     m_particle        = m_distributionParticles(m_randomEngine);
     m_positionTrial   = m_nqs->getX();
@@ -49,22 +39,12 @@ void MetropolisImportanceSampling::setTrialSample() {
     }
 }
 
-/*
-double MetropolisImportanceSampling::proposalRatio() {
-
-    m_sigmoidQTrial           = m_nqs->computeSigmoidQ(m_QTrial);
-    double quantumForceTrial  = m_nqs->quantumForce(m_updateCoordinate, m_xTrial, m_QTrial, m_sigmoidQTrial);
-    //Greens function ratio
-    double part1       = m_xCurrent - m_xTrial(m_updateCoordinate)
-            - m_dt*m_diffusionConstant*quantumForceTrial;
-
-    double part2       = m_xTrial(m_updateCoordinate) - m_xCurrent
-            - m_dt*m_diffusionConstant*m_quantumForceCurrent;
-    return exp(-(part1*part1 - part2*part2)/(4*m_diffusionConstant*m_dt));
-}*/
-
 
 double MetropolisImportanceSampling::proposalRatio() {
+    /*
+     * The function computes the proposal ratio according to the importance sampling method, using Green
+     * functions.
+     */
 
     m_nqs->computeSigmoidQ(m_QTrial, m_sigmoidQTrial);
 
@@ -76,23 +56,10 @@ double MetropolisImportanceSampling::proposalRatio() {
     double gf = 0.0;
     for (int p=0; p<m_nqs->getNX(); p+=m_ndim) {
         for (int d=0; d<m_ndim; d++) {
-            //quantumForceTrial(d) =
-            //        m_nqs->quantumForce(m_ndim*m_particle+d, m_positionTrial, m_sigmoidQTrial);
             quantumForceTrial(d) =
                     m_nqs->quantumForce(p+d, m_positionTrial, m_sigmoidQTrial);
             m_quantumForceCurrent(d) =
                     m_nqs->quantumForce(p+d);
-            /*
-            part1 = m_positionCurrent(m_ndim*m_particle+d) - m_positionTrial(m_ndim*m_particle+d)
-                    - m_dt*m_diffusionConstant*quantumForceTrial(d);
-            part2 = m_positionTrial(m_ndim*m_particle+d) - m_positionCurrent(m_ndim*m_particle+d)
-                    - m_dt*m_diffusionConstant*m_quantumForceCurrent(d);
-            part1 = m_positionCurrent(p+d) - m_positionTrial(p+d)
-                    - m_dt*m_diffusionConstant*quantumForceTrial(d);
-            part2 = m_positionTrial(p+d) - m_positionCurrent(p+d)
-                    - m_dt*m_diffusionConstant*m_quantumForceCurrent(d);
-            greensRatioExponent += -part1*part1*+part2*part2;*/
-
             gf += 0.5 *
                     ( m_quantumForceCurrent(d) + quantumForceTrial(d) ) *
                     (m_diffusionConstant * m_dt * 0.5 *
@@ -101,18 +68,15 @@ double MetropolisImportanceSampling::proposalRatio() {
 
         }
     }
-    //return exp(greensRatioExponent/(4*m_diffusionConstant*m_dt)); //+ m_nqs->getNParticles()-1;
     return exp(gf);
 }
 
-/*
-void MetropolisImportanceSampling::acceptTrialSample() {
-    m_nqs->setX(m_xTrial);
-    m_nqs->setPsi(m_psiTrial);
-    m_nqs->setPsiComponents(m_QTrial, m_sigmoidQTrial);
-}*/
 
 void MetropolisImportanceSampling::acceptTrialSample() {
+    /*
+     * The function performs the updates necessary when a trial state is accepted.
+     */
+
     m_nqs->setX(m_positionTrial);
     m_nqs->setInverseDistances(m_particle);
     m_nqs->setPsi(m_psiTrial);

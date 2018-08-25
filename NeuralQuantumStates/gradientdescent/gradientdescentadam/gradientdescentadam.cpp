@@ -11,6 +11,11 @@ GradientDescentADAM::GradientDescentADAM(double learningrate) : GradientDescent(
 }
 
 VectorXd GradientDescentADAM::computeParameterShift(const Eigen::VectorXd &gradient, int nparameters, int iteration) {
+    /*
+     * The function computes the shift with which the network parameters should be updated according to the
+     * ADAM gradient descent algoirthm.
+     */
+
     VectorXd shift(nparameters);
     VectorXd m(nparameters);
     VectorXd s(nparameters);
@@ -37,6 +42,10 @@ VectorXd GradientDescentADAM::computeParameterShift(const Eigen::VectorXd &gradi
 }
 
 void GradientDescentADAM::setUp(int nparameters) {
+    /*
+     * Set up to be executed when the number of network parameters of the model is known.
+     */
+
     m_mprev.resize(nparameters);
     m_sprev.resize(nparameters);
 

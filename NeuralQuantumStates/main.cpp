@@ -41,9 +41,9 @@ int main()
 
     // Trainer
     int numberOfIterations = 500;
-    double learningrate    = 0.02;
-    double gamma           = 0.05;
-    string minimizertype   = "simple";
+    double learningrate    = 0.05;
+    double gamma           = 0.0;
+    string minimizertype   = "adam";
 
     Trainer trainer(numberOfIterations, learningrate, minimizertype, gamma);
     trainer.train(method, *model);
